@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  risk-app:
+    build: .
+    container_name: risk_degerlendirme_app
+    ports:
+      - "80:80"
+    restart: always

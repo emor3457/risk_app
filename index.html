@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Risk Değerlendirme Analizi | AI Destekli</title>
+  
+  <!-- PWA Meta -->
+  <meta name="theme-color" content="#dc2626">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/index.css">
+  
+  <!-- Kütüphaneler -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <div class="app-layout">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">⚠️</div>
+        <div>
+          <div class="sidebar-title">Risk Analizi AI</div>
+          <div class="sidebar-subtitle">İSG Değerlendirme Sistemi</div>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-target="page-dashboard">
+          <span class="nav-icon">📊</span> Gösterge Paneli
+        </button>
+        <button class="nav-item" data-target="page-workplace">
+          <span class="nav-icon">🏢</span> İşyerleri
+        </button>
+        <button class="nav-item" data-target="page-assessments">
+          <span class="nav-icon">📋</span> Raporlar
+        </button>
+        <button class="nav-item" data-target="page-settings">
+          <span class="nav-icon">⚙️</span> Ayarlar
+        </button>
+      </nav>
+      
+      <div class="sidebar-footer" style="text-align:center; font-size:11px; color:var(--text-muted);">
+        v1.0.0 &bull; Fine-Kinney
+      </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <!-- Mobil Header -->
+      <header class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h1 class="page-title">İSG Risk Değerlendirmesi</h1>
+          <div class="page-subtitle">Gemini 2.5 AI Destekli Analiz</div>
+        </div>
+        <button id="mobile-menu-toggle" class="btn btn-ghost btn-icon" style="display: none;">☰</button>
+      </header>
+      
+      <div class="page-content">
+        
+        <!-- ==============================================
+             SAYFA: DASHBOARD
+             ============================================== -->
+        <section id="page-dashboard" class="page-section active">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon blue">🏢</div>
+              <div>
+                <div class="stat-value" id="stat-workplaces">0</div>
+                <div class="stat-label">İşyeri Kaydı</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon green">📋</div>
+              <div>
+                <div class="stat-value" id="stat-assessments">0</div>
+                <div class="stat-label">Tamamlanan Analiz</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon yellow">⚠️</div>
+              <div>
+                <div class="stat-value" id="stat-risks">0</div>
+                <div class="stat-label">Toplam Risk Tespiti</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon red">🔴</div>
+              <div>
+                <div class="stat-value" id="stat-high-risks">0</div>
+                <div class="stat-label">Yüksek Riskler (Skor >200)</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card card-glass" style="text-align:center; padding: 40px 20px;">
+            <h2>Saha Denetimine Başlayın</h2>
+            <p class="text-muted" style="margin: 16px 0 24px;">İşyerini seçin, fotoğraf/video çekin, AI tehlikeleri bulsun.</p>
+            <button class="btn btn-primary btn-lg" onclick="document.querySelector('[data-target=\'page-workplace\']').click()">Yeni Değerlendirme Başlat</button>
+          </div>
+        </section>
+
+        <!-- ==============================================
+             SAYFA: İŞYERLERİ
+             ============================================== -->
+        <section id="page-workplace" class="page-section">
+          <div id="workplaces-list">
+            <!-- JS ile doldurulacak -->
+          </div>
+        </section>
+
+        <!-- ==============================================
+             SAYFA: RAPORLAR
+             ============================================== -->
+        <section id="page-assessments" class="page-section">
+          <div style="margin-bottom:20px;">
+            <h3>Tamamlanan Değerlendirmeler</h3>
+            <p class="text-muted text-sm">Raporları Excel formatında indirebilirsiniz.</p>
+          </div>
+          <div id="assessments-list">
+            <!-- JS ile doldurulacak -->
+          </div>
+        </section>
+
+        <!-- ==============================================
+             SAYFA: AYARLAR
+             ============================================== -->
+        <section id="page-settings" class="page-section">
+          <div class="card">
+            <h3 class="settings-section-title">Google Gemini AI Ayarları</h3>
+            <p class="text-muted text-sm mb-3">Saha fotoğraflarını ve videolarını analiz etmek için Gemini API anahtarınızı girin. İhtiyacınıza göre <span style="color:var(--risk-important);font-weight:600;">ücretsiz (Flash)</span> veya daha gelişmiş analizler için <span style="color:var(--color-primary);font-weight:600;">ücretli/kurumsal (Pro)</span> API modellerini kullanabilirsiniz.</p>
+            
+            <div class="form-group">
+              <label class="form-label">API Anahtarı <span class="required">*</span></label>
+              <input type="password" id="settings-api-key" class="form-input" placeholder="AIzaSy...">
+              <div class="form-hint"><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio'dan ücretsiz anahtar alın</a>. Anahtar cihazınızda güvenle saklanır.</div>
+            </div>
+            
+            <div class="form-group mt-3">
+              <label class="form-label">Yapay Zeka Modeli</label>
+              <div class="model-options" id="settings-models">
+                <!-- JS ile doldurulacak -->
+              </div>
+            </div>
+            
+            <button id="btn-save-settings" class="btn btn-primary mt-2">Ayarları Kaydet ve Test Et</button>
+          </div>
+        </section>
+
+        <!-- ==============================================
+             SAYFA: ANALİZ & DEĞERLENDİRME (GİZLİ)
+             ============================================== -->
+        <section id="page-analyzer" class="page-section">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <h3>Risk Tespiti (AI)</h3>
+            <button id="btn-finish-assessment" class="btn btn-success btn-sm">Değerlendirmeyi Bitir</button>
+          </div>
+          
+          <div class="card">
+            <!-- Analiz Giriş Formu -->
+            <div id="analyzer-form">
+              <div class="form-group">
+                <label class="form-label">Süreç / Pozisyon / Departman</label>
+                <input type="text" id="analyzer-departman" class="form-input" placeholder="Örn: Kaynak Atölyesi, Depo, Ofis">
+              </div>
+              
+              <label class="form-label">Gözlem / Medya Yakalama</label>
+              <div class="media-capture-btns">
+                <button id="btn-capture-photo" class="media-capture-btn">
+                  <span class="micon">📸</span>
+                  <span class="mlabel">Fotoğraf Çek</span>
+                </button>
+                <button id="btn-capture-video" class="media-capture-btn">
+                  <span class="micon">🎬</span>
+                  <span class="mlabel">Kısa Video Çek</span>
+                </button>
+                <button id="btn-select-gallery" class="media-capture-btn">
+                  <span class="micon">📁</span>
+                  <span class="mlabel">Galeriden Seç</span>
+                </button>
+              </div>
+              
+              <div id="analyzer-media-preview">
+                <!-- Seçilen medyalar buraya gelecek -->
+              </div>
+              
+              <div class="form-row mt-3">
+                <div class="form-group">
+                  <label class="form-label">Odaklanılacak Tehlike Kaynağı</label>
+                  <select id="analyzer-focus" class="form-select">
+                    <option value="Genel">Genel (Tümü)</option>
+                    <option value="Fiziksel">Fiziksel (Gürültü, titreşim vb.)</option>
+                    <option value="Kimyasal">Kimyasal (Toz, gaz, sıvı vb.)</option>
+                    <option value="Biyolojik">Biyolojik (Virüs, bakteri vb.)</option>
+                    <option value="Ergonomik">Ergonomik (Ağır kaldırma vb.)</option>
+                    <option value="Psikososyal">Psikososyal (Stres, iş yükü vb.)</option>
+                    <option value="Elektrik">Elektrik Kaynaklı</option>
+                    <option value="Mekanik">Mekanik (Makine, kesici alet vb.)</option>
+                    <option value="Yangın/Patlama">Yangın ve Patlama</option>
+                    <option value="Düşme">Düşme (Yüksekte Çalışma, Kayma vb.)</option>
+                    <option value="Organizasyonel">Organizasyonel (Eğitim, Prosedür vb.)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">AI Tespit Limiti Kuralı</label>
+                  <select id="analyzer-limit" class="form-select">
+                    <option value="auto">Otomatik (Sınır Yok)</option>
+                    <option value="10-20">Detaylı (10 - 20 Tane Risk)</option>
+                    <option value="20-50">Çok Detaylı (20 - 50 Tane Risk)</option>
+                    <option value="50-100">Kapsamlı (50 - 100 Tane Risk)</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-group mt-3">
+                <label class="form-label">Ek Gözlem Notları (Opsiyonel)</label>
+                <textarea id="analyzer-text-input" class="form-textarea" placeholder="AI'ın dikkat etmesini istediğiniz detaylar var mı?"></textarea>
+              </div>
+              
+              <button id="btn-analyze" class="btn btn-primary btn-lg btn-block mt-2">✨ Yapay Zeka ile Analiz Et</button>
+              
+              <div style="text-align:center; margin: 16px 0; color:var(--text-muted); font-size:14px;">veya</div>
+              
+              <button id="btn-manual-risk" class="btn btn-secondary btn-block">✍️ Manuel Risk Ekle (Yapay Zekasız)</button>
+            </div>
+            
+            <!-- Analiz Sonuçları -->
+            <div id="analyzer-results" class="hidden">
+              <div class="alert success" style="padding:12px; background:rgba(34,197,94,0.1); border-left:3px solid #22c55e; margin-bottom:20px; color:#22c55e;">
+                AI analizi tamamlandı. Lütfen tespitleri inceleyin ve onaylayın.
+              </div>
+              
+              <div id="ai-results-container">
+                <!-- AI Sonuç Kartları -->
+              </div>
+              
+              <button id="btn-new-analysis" class="btn btn-secondary btn-block mt-3">+ Yeni Fotoğraf/Gözlem Analiz Et</button>
+            </div>
+            
+          </div>
+        </section>
+
+      </div>
+    </main>
+    
+    <!-- Alt Navigasyon (Sadece Mobil) -->
+    <nav class="bottom-nav">
+      <ul class="bottom-nav-items">
+        <button class="bottom-nav-item active" data-target="page-dashboard">
+          <span class="bnav-icon">📊</span>
+          <span class="bnav-label">Panel</span>
+        </button>
+        <button class="bottom-nav-item" data-target="page-workplace">
+          <span class="bnav-icon">🏢</span>
+          <span class="bnav-label">İşyerleri</span>
+        </button>
+        <button class="bottom-nav-item" data-target="page-assessments">
+          <span class="bnav-icon">📋</span>
+          <span class="bnav-label">Raporlar</span>
+        </button>
+        <button class="bottom-nav-item" data-target="page-settings">
+          <span class="bnav-icon">⚙️</span>
+          <span class="bnav-label">Ayarlar</span>
+        </button>
+      </ul>
+    </nav>
+    
+  </div>
+
+  <style>
+    /* Inline helper for mobile menu visibility logic */
+    @media (max-width: 768px) {
+      #mobile-menu-toggle { display: block !important; }
+    }
+  </style>
+
+  <!-- Uygulama Mantığı (Modül Sistemi) -->
+  <script type="module" src="js/app.js"></script>
+
+  <!-- Service Worker Kaydı -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then(registration => {
+          console.log('SW registered: ', registration);
+        }).catch(registrationError => {
+          console.log('SW registration failed: ', registrationError);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

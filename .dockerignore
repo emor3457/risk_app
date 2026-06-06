@@ -1,0 +1,8 @@
+.git
+.gitignore
+*.md
+.gemini
+brain
+scratch
+docker-compose.yml
+Dockerfile
