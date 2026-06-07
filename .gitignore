@@ -1,0 +1,25 @@
+# Sıkıştırılmış Dosyalar
+*.zip
+*.tar
+*.tar.gz
+*.rar
+
+# Çevre Değişkenleri ve Gizli Dosyalar (Varsa API key vb. barındırabilecek dosyalar)
+.env
+.env.local
+.env.*.local
+
+# Sistem Dosyaları
+.DS_Store
+Thumbs.db
+
+# IDE ve Editör Klasörleri
+.vscode/
+.idea/
+*.swp
+
+# Bağımlılıklar (Şu an yok ama ileride npm vs. kullanılırsa diye)
+node_modules/
+
+# Docker Build Dosyaları (Varsa gereksiz loglar vs.)
+docker-compose.override.yml
