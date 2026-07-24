@@ -103,9 +103,12 @@ Tablo sütun sırası:
 
 Kurallar:
 - Olasılık, Frekans ve Şiddet değerlerini SADECE yukarıdaki geçerli değerlerden seç.
-- Önlem sonrası puanlar, mevcut durum puanlarından DAHA DÜŞÜK olmalıdır.
+- Şiddet kuralı (Ş₁ ve Ş₂): Tehlike kaynağı (makine, kimyasal vb.) fiziksel olarak tamamen YOK EDİLMEDİĞİ sürece, mevcut şiddet (siddet) ile önlem sonrası şiddet (onlemSonrasiSiddet) değerini ASLA DEĞİŞTİRME (Ş₁ = Ş₂ kalmalıdır).
+- Frekans kuralı (F₁ ve F₂): Çalışanın o bölgeye/tehlikeye girme sıklığını fiziksel bir bariyer, otomasyon veya vardiya düzenlemesi gibi etkileşimi KESİN OLARAK azaltacak bir önlem alınmadıkça frekans değerini ASLA DEĞİŞTİRME (F₁ = F₂ kalmalıdır).
+- Sadece KKD (Kişisel Koruyucu Donanım) verilmesi, uyarı levhası asılması veya eğitim verilmesi durumunda sadece OLASILIK (O) değerini düşür, Frekans ve Şiddete KESİNLİKLE DOKUNMA.
+- Önlem sonrası risk puanı, mevcut durum puanından DAHA DÜŞÜK olmalıdır (genellikle olasılık düşerek bu sağlanır).
 - Birden fazla tehlike varsa hepsini listele.
-- Gerçekçi ve uygulanabilir önlemler yaz.
+- Gerçekçi ve uygulanabilir önlemler (ilaveAksiyon) yaz.
 - Yanıtı SADECE JSON olarak ver, başka açıklama veya markdown ekleme.`;
 
   return prompt;
