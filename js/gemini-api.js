@@ -29,6 +29,7 @@ ZORUNLU KULLANIM LİSTELERİ:
 Aşağıda "Tehlike Kaynağı", "Risk" ve "İlgili Mevzuat" için kullanabileceğin KESİN VE ZORUNLU listeler yer almaktadır.
 Eğer fotoğrafta veya metinde bir tehlike tespit edersen, bu tehlikenin adını (tehlikeKaynagi) ve riskini (risk) MUTLAKA aşağıdaki [TEHLİKE VE RİSK TERİMLERİ] listesinden seçmelisin. İlgili mevzuatı da MUTLAKA [İLGİLİ MEVZUAT LİSTESİ] içinden seçmelisin.
 Bulduğun duruma EN YAKIN terimi listeden bul ve sadece o kelimeleri kullan. Kendi kelimelerini uydurma.
+NOT: Bir tehlike kaynağına karşılık birden fazla "risk" tespit edersen, bunları listeden seçip aralarına virgül koyarak (Örn: "Yaralanma, Uzuv Kaybı, Kesik") birlikte yazabilirsin; tek bir risk ile kısıtlamana gerek yoktur. Yeter ki yazdıkların listedeki ifadelerden oluşsun.
 
 [TEHLİKE VE RİSK TERİMLERİ] (Bu listede tehlike ve risk adları yan yana/karışık yer almaktadır, en uygun ifadeleri seç):
 ${TANIMLAR.TERIMLER.join("\n")}
