@@ -1,4 +1,4 @@
-const CACHE_NAME = 'risk-analizi-v3';
+const CACHE_NAME = 'risk-analizi-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const ASSETS_TO_CACHE = [
   './js/compliance-checker.js',
   './js/excel-export.js',
   './js/ui-components.js',
+  './js/tanimlar.js',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
   'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js'
 ];
