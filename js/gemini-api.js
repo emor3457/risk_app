@@ -27,13 +27,16 @@ function getSystemPrompt(focus, limit) {
   prompt += `
 ZORUNLU KULLANIM LİSTELERİ:
 Aşağıda "Tehlike Kaynağı", "Risk" ve "İlgili Mevzuat" için kullanabileceğin KESİN VE ZORUNLU listeler yer almaktadır.
-Eğer fotoğrafta veya metinde bir tehlike tespit edersen, bu tehlikenin adını (tehlikeKaynagi) ve riskini (risk) MUTLAKA aşağıdaki [TEHLİKE VE RİSK TERİMLERİ] listesinden seçmelisin. İlgili mevzuatı da MUTLAKA [İLGİLİ MEVZUAT LİSTESİ] içinden seçmelisin.
+Eğer fotoğrafta veya metinde bir tehlike tespit edersen, bu tehlikenin adını (tehlikeKaynagi) MUTLAKA [TEHLİKE KAYNAKLARI LİSTESİ] içinden, riskini (risk) ise MUTLAKA [RİSKLER LİSTESİ] içinden seçmelisin. İlgili mevzuatı da MUTLAKA [İLGİLİ MEVZUAT LİSTESİ] içinden seçmelisin.
 KURAL 1: Bulduğun duruma EN YAKIN terimi listeden bul ve SADECE O KELİMELERİ kullan. Dışarıdan KESİNLİKLE harici bir kelime uydurma veya ekleme yapma.
 KURAL 2: Eğer tespit ettiğin tehlikeye veya riske uygun bir tanım listede YOKSA, ilgili alanı (tehlikeKaynagi veya risk) BOŞ BIRAKACAKSIN ("" şeklinde).
 NOT: Bir tehlike kaynağına karşılık birden fazla "risk" tespit edersen, bunları listeden seçip aralarına virgül koyarak (Örn: "Yaralanma, Uzuv Kaybı, Kesik") birlikte yazabilirsin; tek bir risk ile kısıtlamana gerek yoktur. Yeter ki yazdıkların listedeki ifadelerden oluşsun.
 
-[TEHLİKE VE RİSK TERİMLERİ] (Bu listede tehlike ve risk adları yan yana/karışık yer almaktadır, en uygun ifadeleri seç):
-${TANIMLAR.TERIMLER.join("\n")}
+[TEHLİKE KAYNAKLARI LİSTESİ]:
+${TANIMLAR.TEHLIKE_KAYNAKLARI.join("\n")}
+
+[RİSKLER LİSTESİ]:
+${TANIMLAR.RISKLER.join("\n")}
 
 [İLGİLİ MEVZUAT LİSTESİ]:
 ${TANIMLAR.MEVZUATLAR.join("\n")}
