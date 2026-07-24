@@ -1,4 +1,5 @@
 // Gemini API Entegrasyonu — İSG Risk Analizi
+import { TANIMLAR } from './tanimlar.js';
 
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
@@ -24,8 +25,18 @@ function getSystemPrompt(focus, limit) {
   }
 
   prompt += `
-ŞİRKET RİSK GRUPLARI REFERANSI (Çıktılarını bu terminolojiye uygun oluştur):
-Risk Grubu → Tehlike Grubu → Tehlike Kaynağı örnekleri:
+ZORUNLU KULLANIM LİSTELERİ:
+Aşağıda "Tehlike Kaynağı", "Risk" ve "İlgili Mevzuat" için kullanabileceğin KESİN VE ZORUNLU listeler yer almaktadır.
+Eğer fotoğrafta veya metinde bir tehlike tespit edersen, bu tehlikenin adını (tehlikeKaynagi) ve riskini (risk) MUTLAKA aşağıdaki [TEHLİKE VE RİSK TERİMLERİ] listesinden seçmelisin. İlgili mevzuatı da MUTLAKA [İLGİLİ MEVZUAT LİSTESİ] içinden seçmelisin.
+Bulduğun duruma EN YAKIN terimi listeden bul ve sadece o kelimeleri kullan. Kendi kelimelerini uydurma.
+
+[TEHLİKE VE RİSK TERİMLERİ] (Bu listede tehlike ve risk adları yan yana/karışık yer almaktadır, en uygun ifadeleri seç):
+${TANIMLAR.TERIMLER.join("\n")}
+
+[İLGİLİ MEVZUAT LİSTESİ]:
+${TANIMLAR.MEVZUATLAR.join("\n")}
+
+ŞİRKET RİSK GRUPLARI REFERANSI (Sadece "riskGrubu" ve "tehlikeFaktor" alanları için bu kategorizasyonu kullan):
 - Fiziksel → Gürültü, Titreşim, Aydınlatma, Sıcaklık, Basınç, Radyasyon
 - Kimyasal → Toz, Duman, Gaz, Buhar, Sıvı Kimyasal, Asit/Baz
 - Biyolojik → Virüs, Bakteri, Mantar, Parazit
