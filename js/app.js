@@ -466,13 +466,12 @@ function renderAiResults(data) {
           createElement('div', { className: 'risk-badge', style: `background: ${level1.color}22; color: ${level1.color};` }, `Skor: ${score1} - ${level1.level}`)
         ]),
         createElement('div', { className: 'ai-card-body' }, [
-          createAiField('Risk Grubu', t.riskGrubu),
-          createAiField('Tehlike Faktör', t.tehlikeFaktor),
+          createAiField('Tehlike Tanımı', t.tehlikeTanimi),
           createAiField('Tehlike Kaynağı', t.tehlikeKaynagi),
-          createAiField('Tehlike/Risk', t.tehlikeRisk),
+          createAiField('Risk', t.risk),
           createAiField('İlgili Mevzuat', t.ilgiliMevzuat),
           createAiField('Mevcut Durum', t.mevcutDurum),
-          createAiField('Alınacak Önlem', t.alinanOnlem)
+          createAiField('İlave Aksiyon', t.ilaveAksiyon)
         ]),
         createElement('div', { className: 'ai-card-actions' }, [
           createElement('button', { 
@@ -515,24 +514,16 @@ window.editAndSaveRisk = (aiData, index) => {
         <input type="text" id="r-surec" class="form-input" value="${document.getElementById('analyzer-departman').value}">
       </div>
       <div class="form-group">
-        <label class="form-label">Risk Grubu</label>
-        <input type="text" id="r-risk-grubu" class="form-input" value="${aiData.riskGrubu || ''}">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Tehlike Faktör</label>
-        <input type="text" id="r-tehlike-faktor" class="form-input" value="${aiData.tehlikeFaktor || ''}">
+        <label class="form-label">Tehlike Tanımı</label>
+        <input type="text" id="r-tehlike-tanimi" class="form-input" value="${aiData.tehlikeTanimi || ''}">
       </div>
       <div class="form-group">
         <label class="form-label">Tehlike Kaynağı</label>
         <input type="text" id="r-tehlike-kaynagi" class="form-input" value="${aiData.tehlikeKaynagi || ''}">
       </div>
       <div class="form-group">
-        <label class="form-label">Tehlike/Risk</label>
-        <input type="text" id="r-tehlike-risk" class="form-input" value="${aiData.tehlikeRisk || aiData.tehlike || ''}">
-      </div>
-      <div class="form-group">
         <label class="form-label">Risk</label>
-        <input type="text" id="r-risk" class="form-input" value="${aiData.risk || aiData.tehlikeEtkisi || ''}">
+        <input type="text" id="r-risk" class="form-input" value="${aiData.risk || ''}">
       </div>
       
       <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin: 15px 0;">
@@ -571,8 +562,8 @@ window.editAndSaveRisk = (aiData, index) => {
       <div style="background:#f0fdf4; padding:10px; border-radius:8px; margin: 15px 0;">
         <h4 style="margin-top:0; color:#166534; font-size:14px; border-bottom:1px solid #bbf7d0; padding-bottom:5px;">Önlem Sonrası Puanlama</h4>
         <div class="form-group">
-          <label class="form-label">Alınan Önlem / Aksiyonlar</label>
-          <textarea id="r-onlem" class="form-textarea">${aiData.alinanOnlem || aiData.tavsiyeEdilenOnlemler || ''}</textarea>
+          <label class="form-label">İlave Aksiyon</label>
+          <textarea id="r-onlem" class="form-textarea">${aiData.ilaveAksiyon || aiData.alinanOnlem || ''}</textarea>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -619,10 +610,8 @@ window.editAndSaveRisk = (aiData, index) => {
             assessmentId: state.currentAssessmentId,
             siraNo: index + 1,
             surecPozisyonDepartman: document.getElementById('r-surec').value,
-            riskGrubu: document.getElementById('r-risk-grubu').value,
-            tehlikeFaktor: document.getElementById('r-tehlike-faktor').value,
+            tehlikeTanimi: document.getElementById('r-tehlike-tanimi').value,
             tehlikeKaynagi: document.getElementById('r-tehlike-kaynagi').value,
-            tehlikeRisk: document.getElementById('r-tehlike-risk').value,
             risk: document.getElementById('r-risk').value,
             ilgiliMevzuat: document.getElementById('r-mevzuat').value,
             mevcutDurum: document.getElementById('r-mevcut').value,
@@ -630,10 +619,10 @@ window.editAndSaveRisk = (aiData, index) => {
             frekans: f1,
             siddet: s1,
             riskSkoru: skor1,
-            alinanOnlem: document.getElementById('r-onlem').value,
-            onlemSonrasiO: o2,
-            onlemSonrasiF: f2,
-            onlemSonrasiS: s2,
+            ilaveAksiyon: document.getElementById('r-onlem').value,
+            onlemSonrasiOlasilik: o2,
+            onlemSonrasiFrekans: f2,
+            onlemSonrasiSiddet: s2,
             onlemSonrasiRiskSkoru: skor2,
             dof: ExcelExport.generateDOFNumber(),
             sorumlu: 'İSG Uzmanı',
@@ -790,8 +779,8 @@ window.viewAssessment = async (astId) => {
       const level = FineKinney.getRiskLevel(r.riskSkoru);
       risksHtml += `
         <div style="background:var(--bg-surface); padding:12px; margin-bottom:12px; border-radius:8px; border-left:4px solid ${level.color}">
-          <div style="font-weight:600; margin-bottom:4px;">${idx + 1}. ${r.tehlikeKaynagi ? r.tehlikeKaynagi + ' - ' : ''}${r.tehlike || r.tehlikeRisk}</div>
-          <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px;"><strong>Risk Grubu:</strong> ${r.riskGrubu || '-'}</div>
+          <div style="font-weight:600; margin-bottom:4px;">${idx + 1}. ${r.tehlikeTanimi || r.tehlikeKaynagi || '-'}</div>
+          <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px;"><strong>Tehlike Kaynağı:</strong> ${r.tehlikeKaynagi || '-'}</div>
           <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px;"><strong>Risk:</strong> ${r.risk || '-'}</div>
           <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px;"><strong>Mevzuat:</strong> ${r.ilgiliMevzuat || '-'}</div>
           <div style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">${r.surecPozisyonDepartman || '-'}</div>
@@ -803,7 +792,7 @@ window.viewAssessment = async (astId) => {
             </div>
             ${r.onlemSonrasiRiskSkoru ? `
             <div style="display:flex; gap:8px;">
-              <div class="risk-badge" style="background:var(--bg-surface-2)">Önlem Sonrası: O:${r.onlemSonrasiO || '-'} F:${r.onlemSonrasiF || '-'} Ş:${r.onlemSonrasiS || '-'}</div>
+              <div class="risk-badge" style="background:var(--bg-surface-2)">Önlem Sonrası: O:${r.onlemSonrasiOlasilik || '-'} F:${r.onlemSonrasiFrekans || '-'} Ş:${r.onlemSonrasiSiddet || '-'}</div>
               <div class="risk-badge" style="background:${FineKinney.getRiskLevel(r.onlemSonrasiRiskSkoru).color}22; color:${FineKinney.getRiskLevel(r.onlemSonrasiRiskSkoru).color}">Skor₂: ${r.onlemSonrasiRiskSkoru}</div>
             </div>
             ` : ''}

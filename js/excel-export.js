@@ -31,26 +31,24 @@ const STYLE_DATA_CENTER = {
     alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
 };
 
-/** Sütun genişlikleri (wch = karakter sayısı) */
+/** Sütun genişlikleri — riskcikti.pdf sütun sırası */
 const COL_WIDTHS = [
     { wch: 8 },   // Sıra No
-    { wch: 25 },  // Süreç/Pozisyon/Departman
-    { wch: 15 },  // Risk Grubu
-    { wch: 20 },  // Tehlike Faktör
-    { wch: 20 },  // Tehlike Kaynağı
-    { wch: 20 },  // Tehlike/Risk
-    { wch: 20 },  // Risk (Etkisi)
-    { wch: 25 },  // İlgili Mevzuat
-    { wch: 30 },  // Mevcut Durum
+    { wch: 25 },  // Faaliyet/Bölüm
+    { wch: 30 },  // Tehlike Tanımı
+    { wch: 25 },  // Tehlike Kaynağı
+    { wch: 25 },  // Risk
+    { wch: 30 },  // İlgili Mevzuat
+    { wch: 35 },  // Mevcut Durum
     { wch: 5 },   // O1
     { wch: 5 },   // F1
     { wch: 5 },   // Ş1
-    { wch: 10 },  // Risk Skoru1
-    { wch: 35 },  // Alınan Önlem
+    { wch: 10 },  // Risk Puanı (Mevcut)
+    { wch: 40 },  // İlave Aksiyon
     { wch: 5 },   // O2
     { wch: 5 },   // F2
     { wch: 5 },   // Ş2
-    { wch: 10 },  // Risk Skoru2
+    { wch: 10 },  // Risk Puanı (Önlem Sonrası)
     { wch: 15 },  // DÖF
     { wch: 15 },  // Sorumlu
     { wch: 12 },  // Termin Tarihi
@@ -145,36 +143,38 @@ export async function exportToExcel(assessmentData) {
     rows.push(new Array(22).fill(''));
     rows.push(new Array(22).fill(''));
 
-    // ── Satır 5: Sütun başlıkları ──
+    // ── Satır 5: Sütun başlıkları — riskcikti.pdf formatı ──
     const colHeaders = [
-        'Sıra No', 'Faaliyet/Bölüm', 'Risk Grubu', 'Tehlike Faktör', 'Tehlike Kaynağı', 'Tehlike/Risk', 'Risk', 'İlgili Mevzuat',
-        'Mevcut Durum', 'O₁', 'F₁', 'Ş₁', 'Risk Skoru₁',
-        'Alınan Önlem', 'O₂', 'F₂', 'Ş₂', 'Risk Skoru₂',
+        'Sıra No', 'Faaliyet/Bölüm',
+        'Tehlike Tanımı', 'Tehlike Kaynağı', 'Risk', 'İlgili Mevzuat',
+        'Mevcut Durum', 'O₁', 'F₁', 'Ş₁', 'Risk Puanı (Mevcut)',
+        'İlave Aksiyon', 'O₂', 'F₂', 'Ş₂', 'Risk Puanı (Önlem Sonrası)',
         'DÖF', 'Sorumlu', 'Termin', 'Durum'
     ];
     rows.push(colHeaders);
 
-    // ── Satır 6+: Veri satırları ──
+    // ── Satır 6+: Veri satırları — riskcikti.pdf sütun sırası ──
     for (const risk of risks) {
+        const riskPuani = (risk.olasilik ?? 0) * (risk.frekans ?? 0) * (risk.siddet ?? 0);
+        const onlemSonrasiPuan = (risk.onlemSonrasiOlasilik ?? 0) * (risk.onlemSonrasiFrekans ?? 0) * (risk.onlemSonrasiSiddet ?? 0);
         rows.push([
             risk.siraNo || '',
             risk.surecPozisyonDepartman || '',
-            risk.riskGrubu || '',
-            risk.tehlikeFaktor || '',
+            // Yeni riskcikti sütunları:
+            risk.tehlikeTanimi || '',
             risk.tehlikeKaynagi || '',
-            risk.tehlikeRisk || risk.tehlike || '',
-            risk.risk || risk.tehlikeRiskEtkisi || '',
+            risk.risk || '',
             risk.ilgiliMevzuat || '',
             risk.mevcutDurum || '',
             risk.olasilik ?? '',
             risk.frekans ?? '',
             risk.siddet ?? '',
-            risk.riskSkoru ?? '',
-            risk.alinanOnlem || risk.tavsiyeEdilenOnlemler || '',
-            risk.onlemSonrasiO ?? '',
-            risk.onlemSonrasiF ?? '',
-            risk.onlemSonrasiS ?? '',
-            risk.onlemSonrasiRiskSkoru ?? '',
+            riskPuani || risk.riskSkoru || '',
+            risk.ilaveAksiyon || risk.alinanOnlem || '',
+            risk.onlemSonrasiOlasilik ?? '',
+            risk.onlemSonrasiFrekans ?? '',
+            risk.onlemSonrasiSiddet ?? '',
+            onlemSonrasiPuan || risk.onlemSonrasiRiskSkoru || '',
             risk.dof || '',
             risk.sorumlu || '',
             risk.terminTarihi ? formatDate(risk.terminTarihi) : '',
@@ -183,25 +183,25 @@ export async function exportToExcel(assessmentData) {
     }
 
     // ── 2 boş satır ──
-    rows.push(new Array(22).fill(''));
-    rows.push(new Array(22).fill(''));
+    rows.push(new Array(20).fill(''));
+    rows.push(new Array(20).fill(''));
 
     // ── Bakım Çalışmaları İstatistiği ──
     const bakimHeaderRow = rows.length;
-    rows.push(['BAKIM ÇALIŞMALARI İSTATİSTİĞİ ÇALIŞMADAĞI', ...new Array(21).fill('')]);
-    addMerge(merges, bakimHeaderRow, 0, bakimHeaderRow, 21);
+    rows.push(['BAKIM ÇALIŞMALARI İSTATİSTİĞİ', ...new Array(19).fill('')]);
+    addMerge(merges, bakimHeaderRow, 0, bakimHeaderRow, 19);
 
     const kaynaklarRow = rows.length;
-    rows.push(['KAYNAKLARIN TEHLİKE LİSTESİ', ...new Array(21).fill('')]);
-    addMerge(merges, kaynaklarRow, 0, kaynaklarRow, 21);
+    rows.push(['KAYNAKLARIN TEHLİKE LİSTESİ', ...new Array(19).fill('')]);
+    addMerge(merges, kaynaklarRow, 0, kaynaklarRow, 19);
 
     // ── Boş satır ──
-    rows.push(new Array(22).fill(''));
+    rows.push(new Array(20).fill(''));
 
     // ── İSG & MSDS Bölümü ──
     const isgHeaderRow = rows.length;
-    rows.push(['İSG & MSDS Eğitimleri verilmelidir', ...new Array(21).fill('')]);
-    addMerge(merges, isgHeaderRow, 0, isgHeaderRow, 21);
+    rows.push(['İSG & MSDS Eğitimleri verilmelidir', ...new Array(19).fill('')]);
+    addMerge(merges, isgHeaderRow, 0, isgHeaderRow, 19);
 
     // Uyum kalemleri
     for (const item of compliance) {
@@ -209,7 +209,7 @@ export async function exportToExcel(assessmentData) {
             : item.durum === 'eksik' ? '❌ Eksik'
             : item.durum === 'sonra' ? '⏳ Sonra eklenecek'
             : item.durum || '';
-        rows.push([item.label || '', durumLabel, ...new Array(20).fill('')]);
+        rows.push([item.label || '', durumLabel, ...new Array(18).fill('')]);
         addMerge(merges, rows.length - 1, 1, rows.length - 1, 3);
     }
 
@@ -217,13 +217,14 @@ export async function exportToExcel(assessmentData) {
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = COL_WIDTHS;
     ws['!merges'] = merges;
+    const TOTAL_COLS = 20;
 
     // ── Stil uygula ──
     // NOT: Stiller xlsx-style addon ile çalışır. Standart SheetJS CE'de
     // stiller görmezden gelinebilir ama veri yapısı doğru olacaktır.
 
     // Satır 1-2 başlık stilleri
-    for (let c = 0; c < 22; c++) {
+    for (let c = 0; c < TOTAL_COLS; c++) {
         const ref1 = XLSX.utils.encode_cell({ r: 0, c });
         const ref2 = XLSX.utils.encode_cell({ r: 1, c });
         applyStyle(ws, ref1, STYLE_HEADER);
@@ -231,7 +232,7 @@ export async function exportToExcel(assessmentData) {
     }
 
     // Satır 5 sütun başlıkları
-    for (let c = 0; c < 22; c++) {
+    for (let c = 0; c < TOTAL_COLS; c++) {
         const ref = XLSX.utils.encode_cell({ r: 4, c });
         applyStyle(ws, ref, STYLE_COL_HEADER);
     }
@@ -239,20 +240,21 @@ export async function exportToExcel(assessmentData) {
     // Veri satırları stilleri
     for (let i = 0; i < risks.length; i++) {
         const r = 5 + i; // Satır 6'dan itibaren (0-indexed: 5)
-        for (let c = 0; c < 22; c++) {
+        for (let c = 0; c < TOTAL_COLS; c++) {
             const ref = XLSX.utils.encode_cell({ r, c });
-            // O1, F1, Ş1, Risk Skoru1 (9,10,11,12) ve O2, F2, Ş2, Risk Skoru2 (14,15,16,17) sütunları ortalı
-            if ((c >= 9 && c <= 12) || (c >= 14 && c <= 17)) {
+            // riskcikti sütun sırası: O1(7) F1(8) Ş1(9) Puan1(10) ve O2(12) F2(13) Ş2(14) Puan2(15) ortalı
+            if ((c >= 7 && c <= 10) || (c >= 12 && c <= 15)) {
                 applyStyle(ws, ref, STYLE_DATA_CENTER);
             } else {
                 applyStyle(ws, ref, STYLE_DATA);
             }
         }
 
-        // Risk skoru1 hücresine renk
-        const score1Ref = XLSX.utils.encode_cell({ r, c: 12 });
-        if (ws[score1Ref] && risks[i].riskSkoru != null) {
-            const color = riskColor(risks[i].riskSkoru);
+        // Risk Puanı (Mevcut) hücresine renk — sütun 10
+        const rp = (risks[i].olasilik ?? 0) * (risks[i].frekans ?? 0) * (risks[i].siddet ?? 0);
+        const score1Ref = XLSX.utils.encode_cell({ r, c: 10 });
+        if (ws[score1Ref] && rp > 0) {
+            const color = riskColor(rp);
             ws[score1Ref].s = {
                 ...STYLE_DATA_CENTER,
                 fill: { fgColor: { rgb: color } },
@@ -260,10 +262,11 @@ export async function exportToExcel(assessmentData) {
             };
         }
 
-        // Risk skoru2 hücresine renk
-        const score2Ref = XLSX.utils.encode_cell({ r, c: 17 });
-        if (ws[score2Ref] && risks[i].onlemSonrasiRiskSkoru != null) {
-            const color = riskColor(risks[i].onlemSonrasiRiskSkoru);
+        // Risk Puanı (Önlem Sonrası) hücresine renk — sütun 15
+        const rp2 = (risks[i].onlemSonrasiOlasilik ?? 0) * (risks[i].onlemSonrasiFrekans ?? 0) * (risks[i].onlemSonrasiSiddet ?? 0);
+        const score2Ref = XLSX.utils.encode_cell({ r, c: 15 });
+        if (ws[score2Ref] && rp2 > 0) {
+            const color = riskColor(rp2);
             ws[score2Ref].s = {
                 ...STYLE_DATA_CENTER,
                 fill: { fgColor: { rgb: color } },
@@ -274,8 +277,10 @@ export async function exportToExcel(assessmentData) {
 
     // Bakım ve İSG başlık stilleri
     for (const row of [bakimHeaderRow, kaynaklarRow, isgHeaderRow]) {
-        const ref = XLSX.utils.encode_cell({ r: row, c: 0 });
-        applyStyle(ws, ref, STYLE_HEADER);
+        for (let c = 0; c < TOTAL_COLS; c++) {
+            const ref = XLSX.utils.encode_cell({ r: row, c });
+            applyStyle(ws, ref, STYLE_HEADER);
+        }
     }
 
     // ── Workbook oluştur ve indir ──

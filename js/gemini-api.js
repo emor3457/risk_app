@@ -58,36 +58,42 @@ ${TANIMLAR.MEVZUATLAR.join("\n")}
 - Kişisel koruyucu donanım (KKD) kullanımındaki eksiklikler veya KKD formlarının olmaması.
 Bu tür genel durumları da birer risk maddesi (tehlike) olarak ekleyebilirsin.
 
-Verilen medyayı ve metni analiz et ve tespit ettiğin TÜM tehlikeleri aşağıdaki JSON formatında döndür:
-DİKKAT: Her tehlike için HEM mevcut durum puanlarını (olasilik, frekans, siddet) HEM DE önerilen önlemler alındıktan sonra beklenen puanları (onlemSonrasiOlasilik, onlemSonrasiFrekans, onlemSonrasiSiddet) hesapla.
-DİKKAT: İlgili mevzuat alanını da doldur.
+Verilen medyayı ve metni analiz et ve tespit ettiğin TÜM tehlikeleri aşağıdaki JSON formatında döndür.
+Bu format, kurumsal risk değerlendirme tablosunun (riskcikti) sütunlarıyla BİREBİR uyumludur. Aşağıdaki sıra ve alan adlarının DIŞINA ÇIKMA:
+
+Tablo sütun sırası:
+1. TEHLİKE TANIMI     → tehlikeTanimi
+2. TEHLİKE KAYNAĞI   → tehlikeKaynagi   (tanimlar listesinden)
+3. RİSK              → risk              (tanimlar listesinden, virgülle birden fazla yazılabilir)
+4. İLGİLİ MEVZUAT   → ilgiliMevzuat    (tanimlar mevzuat listesinden)
+5. MEVCUT DURUM      → mevcutDurum
+6. OLASILIK          → olasilik         (mevcut durum)
+7. FREKANS           → frekans          (mevcut durum)
+8. ŞİDDET            → siddet           (mevcut durum)
+9. RİSK PUANI        → (otomatik: olasilik × frekans × siddet, hesaplamana gerek yok)
+10. İLAVE AKSİYON   → ilaveAksiyon
+11. OLASILIK         → onlemSonrasiOlasilik  (önlem sonrası)
+12. FREKANS          → onlemSonrasiFrekans   (önlem sonrası)
+13. ŞİDDET           → onlemSonrasiSiddet   (önlem sonrası)
+14. RİSK PUANI       → (otomatik: önlem sonrası çarpım, hesaplamana gerek yok)
 
 {
   "tehlikeler": [
     {
-      "riskGrubu": "Fiziksel / Kimyasal / Ergonomik vb.",
-      "tehlikeFaktor": "Tehlike faktörü (Gürültü, Toz, Ağır Kaldırma vb.)",
-      "tehlikeKaynagi": "Tehlikenin kaynağı (ekipman, ortam, madde vb.)",
-      "tehlikeRisk": "Tehlike ve risk açıklaması",
-      "risk": "Olası sonuç/etki",
-      "ilgiliMevzuat": "İlgili yönetmelik/kanun ve maddesi (Örn: 6331 sayılı İSG Kanunu Md.5)",
-      "mevcutDurum": "Gözlemlenen veya varsayılan mevcut durum",
+      "tehlikeTanimi": "Tehlikenin genel adı / tanımı (riskGrubu ve tehlikeFaktörü birleştirerek açıkla, Örn: Ergonomik - Ağır Kaldırma)",
+      "tehlikeKaynagi": "Tehlike kaynağı (tanimlar listesinden seç)",
+      "risk": "Olası risk(ler) (tanimlar listesinden, virgülle birden fazla yazılabilir)",
+      "ilgiliMevzuat": "İlgili yönetmelik/kanun (tanimlar mevzuat listesinden seç)",
+      "mevcutDurum": "Gözlemlenen veya varsayılan mevcut durum açıklaması",
       "olasilik": <0.1|0.2|0.5|1|3|6|10>,
       "frekans": <0.5|1|2|3|6|10>,
       "siddet": <1|3|7|15|40|100>,
-      "alinanOnlem": "Alınması gereken önlemler",
+      "ilaveAksiyon": "Alınması gereken ilave aksiyon ve önlemler",
       "onlemSonrasiOlasilik": <0.1|0.2|0.5|1|3|6|10>,
       "onlemSonrasiFrekans": <0.5|1|2|3|6|10>,
       "onlemSonrasiSiddet": <1|3|7|15|40|100>
     }
   ],
-  "pikselerdenTespitler": {
-    "msdsGerekli": true/false,
-    "kullanmaTalimatiGerekli": true/false,
-    "kkdGerekli": true/false,
-    "acilDurumPlaniGerekli": true/false,
-    "bakimKaydiGerekli": true/false
-  },
   "genelDegerlendirme": "Genel durum özeti"
 }
 
@@ -95,8 +101,8 @@ Kurallar:
 - Olasılık, Frekans ve Şiddet değerlerini SADECE yukarıdaki geçerli değerlerden seç.
 - Önlem sonrası puanlar, mevcut durum puanlarından DAHA DÜŞÜK olmalıdır.
 - Birden fazla tehlike varsa hepsini listele.
-- Gerçekçi ve uygulanabilir öneriler ver.
-- Yanıtı sadece JSON olarak ver, başka açıklama ekleme.`;
+- Gerçekçi ve uygulanabilir önlemler yaz.
+- Yanıtı SADECE JSON olarak ver, başka açıklama veya markdown ekleme.`;
 
   return prompt;
 }
