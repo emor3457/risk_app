@@ -104,12 +104,12 @@ Tablo sütun sırası:
   "genelDegerlendirme": "Genel durum özeti"
 }
 
-RİSK SEVİYESİ HESAPLAMA (Fine-Kinney - O×F×Ş):
-- Risk Puanı ≥ 400            → Seviye 1 (Çok Yüksek Risk)
-- 200 ≤ Risk Puanı < 400      → Seviye 2 (Yüksek Risk)
-- 70 ≤ Risk Puanı < 200       → Seviye 3 (Önemli Risk)
-- 20 ≤ Risk Puanı < 70        → Seviye 4 (Orta Risk)
-- Risk Puanı < 20             → Seviye 5 (Kabul Edilebilir Risk)
+RİSK SEVİYESİ TANIMLARI (ornek5li tablosundan - Fine-Kinney O×F×Ş):
+- Risk Puanı ≥ 400            → Seviye 1 | ÇOK YÜKSEK RİSK      | Derhal aksiyon zorunlu
+- 200 ≤ Risk Puanı < 400      → Seviye 2 | YÜKSEK RİSK          | Kısa sürede aksiyon gerekli
+- 70 ≤ Risk Puanı < 200       → Seviye 3 | ÖNEMLİ RİSK          | Planlı iyileştirme yapılabilir
+- 20 ≤ Risk Puanı < 70        → Seviye 4 | ORTA RİSK            | Gözetim altında tutulmalı
+- Risk Puanı < 20             → Seviye 5 | KABULEDİLEBİLİR RİSK | Kayıt altında tutulur
 
 Kurallar:
 - Olasılık, Frekans ve Şiddet değerlerini SADECE yukarıdaki geçerli değerlerden seç.
@@ -117,8 +117,14 @@ Kurallar:
 - Frekans kuralı (F₁ ve F₂): Çalışanın tehlikeye girme sıklığını fiziksel bir bariyer, otomasyon veya vardiya düzenlemesi gibi etkileşimi KESİN OLARAK azaltacak bir önlem alınmadıkça frekans değerini ASLA DEĞİŞTİRME (F₁ = F₂ kalmalıdır).
 - Sadece KKD verilmesi, uyarı levhası asılması veya eğitim verilmesi durumunda sadece OLASILIK (O) değerini düşür, Frekans ve Şiddete KESİNLİKLE DOKUNMA.
 - MEVCUT DURUM alanına ileride yapılacak aksiyonlara yer verme. 'meli/malı/ecek/acak' ifadeleri kesinlikle KULLANMA. Sadece şu anki gözlemlenen durumu yaz.
-- İLAVE AKSİYON kuralı: Mevcut risk seviyesi Seviye 3, 4 veya 5 ise ilaveAksiyon alanına SADECE 'Mevcut durumun devamlılığı sağlanmalıdır.' yaz, başka bir şey ekleme. Yalnızca Seviye 1 veya Seviye 2 ise spesifik aksiyon yaz.
-- Seviye 3-4-5 kuralı: Mevcut risk puanı Seviye 3, 4 veya 5 çıkıyorsa, önlem sonrası puanlar (onlemSonrasiOlasilik, onlemSonrasiFrekans, onlemSonrasiSiddet) mevcut puanlarla AYNI kalmalıdır.
+- İLAVE AKSİYON MANTIĞI (İKİ ADIMLI KARAR - KESİNLİKLE UYGULA):
+  ADIM 1: Mevcut durumu değerlendir.
+    → Mevcut durumda 'yok', 'bulunmamakta', 'yapılmamakta', 'yetersiz', 'eksik', 'uygunsuz', 'kullanılmıyor', 'arızalı', 'kapalı', 'sağlanamamakta', 'varsayılmaktadır' gibi EKSİKLİK/SORUN ifadeleri varsa → Bu durum EKSİKLİK durumudur.
+    → Mevcut durumda 'yapılmaktadır', 'uygulanmaktadır', 'mevcuttur', 'dağıtılmaktadır', 'sertifikalandırılmaktadır', 'düzenli olarak gerçekleştirilmektedir', 'takip edilmektedir' gibi OLUMLU ifadeler varsa → Bu durum YETERLİ durumudur.
+  ADIM 2: Aksiyonu belirle.
+    → EKSİKLİK durumu ise: Risk seviyesi Seviye 3, 4 veya 5 bile olsa MUTLAKA spesifik düzeltici aksiyon yaz. Önlem sonrası puanlar bu aksiyon uygulandıktan sonraki beklenen değerleri gösterir.
+    → YETERLİ durum VE Seviye 3-4-5 ise: ilaveAksiyon alanına SADECE 'Mevcut durumun devamlılığı sağlanmalıdır.' yaz. Önlem sonrası puanlar mevcut puanlarla AYNI kalır.
+    → YETERLİ durum VE Seviye 1-2 ise: Ek iyileştirici spesifik aksiyon yaz.
 - Birden fazla tehlike varsa hepsini listele.
 - Gerçekçi ve uygulanabilir önlemler yaz.
 - Yanıtı SADECE JSON olarak ver, başka açıklama veya markdown ekleme.`;
