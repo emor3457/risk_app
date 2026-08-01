@@ -468,9 +468,11 @@ function renderAiResults(data) {
         createElement('div', { className: 'ai-card-body' }, [
           createAiField('Tehlike Tanımı', t.tehlikeTanimi),
           createAiField('Tehlike Kaynağı', t.tehlikeKaynagi),
+          createAiField('Etkilenenler', t.etkilenenler),
           createAiField('Risk', t.risk),
           createAiField('İlgili Mevzuat', t.ilgiliMevzuat),
           createAiField('Mevcut Durum', t.mevcutDurum),
+          createAiField('Risk Seviyesi', t.riskSeviyesi),
           createAiField('İlave Aksiyon', t.ilaveAksiyon)
         ]),
         createElement('div', { className: 'ai-card-actions' }, [

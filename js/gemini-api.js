@@ -84,31 +84,43 @@ Tablo sütun sırası:
 {
   "tehlikeler": [
     {
-      "tehlikeTanimi": "Tehlikenin genel adı / tanımı (riskGrubu ve tehlikeFaktörü birleştirerek açıkla, Örn: Ergonomik - Ağır Kaldırma)",
-      "tehlikeKaynagi": "Tehlike kaynağı (tanimlar listesinden seç)",
-      "risk": "Olası risk(ler) (tanimlar listesinden, virgülle birden fazla yazılabilir)",
+      "tehlikeTanimi": "Tehlikenin genel adı / tanımı (Örn: Yaşam halatlarının keskin yüzeylerden korunmaması)",
+      "tehlikeKaynagi": "Tehlike kaynağı (tanimlar listesinden seç, yoksa boş bırak)",
+      "etkilenenler": "Çalışanlar, Ziyaretçiler (v.b.)",
+      "risk": "Olası risk(ler) (tanimlar listesinden, virgülle birden fazla yazılabilir, yoksa boş bırak)",
       "ilgiliMevzuat": "İlgili yönetmelik/kanun (tanimlar mevzuat listesinden seç)",
-      "mevcutDurum": "Gözlemlenen veya varsayılan mevcut durum açıklaması",
+      "mevcutDurum": "Gözlemlenen mevcut durum. KESİNLİKLE 'meli/malı/ecek/acak' ile biten gelecek zaman ifadesi KULLANMA. Sadece şu anda var olan durumu yaz.",
       "olasilik": <0.1|0.2|0.5|1|3|6|10>,
       "frekans": <0.5|1|2|3|6|10>,
       "siddet": <1|3|7|15|40|100>,
-      "ilaveAksiyon": "Alınması gereken ilave aksiyon ve önlemler",
+      "riskSeviyesi": "Seviye 1|Seviye 2|Seviye 3|Seviye 4|Seviye 5",
+      "ilaveAksiyon": "Risk seviyesine göre: Seviye 1 veya 2 ise spesifik aksiyon yaz. Seviye 3, 4 veya 5 ise SADECE 'Mevcut durumun devamlılığı sağlanmalıdır.' yaz.",
       "onlemSonrasiOlasilik": <0.1|0.2|0.5|1|3|6|10>,
       "onlemSonrasiFrekans": <0.5|1|2|3|6|10>,
-      "onlemSonrasiSiddet": <1|3|7|15|40|100>
+      "onlemSonrasiSiddet": <1|3|7|15|40|100>,
+      "onlemSonrasiRiskSeviyesi": "Seviye 1|Seviye 2|Seviye 3|Seviye 4|Seviye 5"
     }
   ],
   "genelDegerlendirme": "Genel durum özeti"
 }
 
+RİSK SEVİYESİ HESAPLAMA (Fine-Kinney - O×F×Ş):
+- Risk Puanı ≥ 400            → Seviye 1 (Çok Yüksek Risk)
+- 200 ≤ Risk Puanı < 400      → Seviye 2 (Yüksek Risk)
+- 70 ≤ Risk Puanı < 200       → Seviye 3 (Önemli Risk)
+- 20 ≤ Risk Puanı < 70        → Seviye 4 (Orta Risk)
+- Risk Puanı < 20             → Seviye 5 (Kabul Edilebilir Risk)
+
 Kurallar:
 - Olasılık, Frekans ve Şiddet değerlerini SADECE yukarıdaki geçerli değerlerden seç.
-- Şiddet kuralı (Ş₁ ve Ş₂): Tehlike kaynağı (makine, kimyasal vb.) fiziksel olarak tamamen YOK EDİLMEDİĞİ sürece, mevcut şiddet (siddet) ile önlem sonrası şiddet (onlemSonrasiSiddet) değerini ASLA DEĞİŞTİRME (Ş₁ = Ş₂ kalmalıdır).
-- Frekans kuralı (F₁ ve F₂): Çalışanın o bölgeye/tehlikeye girme sıklığını fiziksel bir bariyer, otomasyon veya vardiya düzenlemesi gibi etkileşimi KESİN OLARAK azaltacak bir önlem alınmadıkça frekans değerini ASLA DEĞİŞTİRME (F₁ = F₂ kalmalıdır).
-- Sadece KKD (Kişisel Koruyucu Donanım) verilmesi, uyarı levhası asılması veya eğitim verilmesi durumunda sadece OLASILIK (O) değerini düşür, Frekans ve Şiddete KESİNLİKLE DOKUNMA.
-- Önlem sonrası risk puanı, mevcut durum puanından DAHA DÜŞÜK olmalıdır (genellikle olasılık düşerek bu sağlanır).
+- Şiddet kuralı (Ş₁ ve Ş₂): Tehlike kaynağı fiziksel olarak tamamen YOK EDİLMEDİĞİ sürece mevcut şiddet ile önlem sonrası şiddet değerini ASLA DEĞİŞTİRME (Ş₁ = Ş₂ kalmalıdır).
+- Frekans kuralı (F₁ ve F₂): Çalışanın tehlikeye girme sıklığını fiziksel bir bariyer, otomasyon veya vardiya düzenlemesi gibi etkileşimi KESİN OLARAK azaltacak bir önlem alınmadıkça frekans değerini ASLA DEĞİŞTİRME (F₁ = F₂ kalmalıdır).
+- Sadece KKD verilmesi, uyarı levhası asılması veya eğitim verilmesi durumunda sadece OLASILIK (O) değerini düşür, Frekans ve Şiddete KESİNLİKLE DOKUNMA.
+- MEVCUT DURUM alanına ileride yapılacak aksiyonlara yer verme. 'meli/malı/ecek/acak' ifadeleri kesinlikle KULLANMA. Sadece şu anki gözlemlenen durumu yaz.
+- İLAVE AKSİYON kuralı: Mevcut risk seviyesi Seviye 3, 4 veya 5 ise ilaveAksiyon alanına SADECE 'Mevcut durumun devamlılığı sağlanmalıdır.' yaz, başka bir şey ekleme. Yalnızca Seviye 1 veya Seviye 2 ise spesifik aksiyon yaz.
+- Seviye 3-4-5 kuralı: Mevcut risk puanı Seviye 3, 4 veya 5 çıkıyorsa, önlem sonrası puanlar (onlemSonrasiOlasilik, onlemSonrasiFrekans, onlemSonrasiSiddet) mevcut puanlarla AYNI kalmalıdır.
 - Birden fazla tehlike varsa hepsini listele.
-- Gerçekçi ve uygulanabilir önlemler (ilaveAksiyon) yaz.
+- Gerçekçi ve uygulanabilir önlemler yaz.
 - Yanıtı SADECE JSON olarak ver, başka açıklama veya markdown ekleme.`;
 
   return prompt;
