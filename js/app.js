@@ -486,6 +486,15 @@ function renderAiResults(data) {
   }
   
   if (data.tehlikeler && data.tehlikeler.length > 0) {
+    // Tümünü Kaydet butonu
+    container.innerHTML += `
+      <div style="display:flex; justify-content:flex-end; margin-bottom: 15px;">
+        <button class="btn btn-success" onclick="window.saveAllRisks()" style="font-weight:bold;">
+          Tüm Tespitleri Veritabanına Kaydet (${data.tehlikeler.length})
+        </button>
+      </div>
+    `;
+
     data.tehlikeler.forEach((t, i) => {
       const score1 = FineKinney.calculateRiskScore(t.olasilik || 1, t.frekans || 1, t.siddet || 1);
       const level1 = FineKinney.getRiskLevel(score1);
@@ -669,9 +678,74 @@ window.editAndSaveRisk = (aiData, index) => {
           return true;
         }
       }
+      }
     }
   ]);
 };
+
+window.saveAllRisks = async () => {
+  if (!state.aiResults || !state.aiResults.tehlikeler || state.aiResults.tehlikeler.length === 0) {
+    showToast('Kaydedilecek tespit bulunamadı.', 'warning');
+    return;
+  }
+  
+  try {
+    toggleLoading(true, 'Tüm riskler veritabanına kaydediliyor...');
+    let successCount = 0;
+    
+    for (let i = 0; i < state.aiResults.tehlikeler.length; i++) {
+      const aiData = state.aiResults.tehlikeler[i];
+      
+      const o1 = parseFloat(aiData.olasilik) || 1;
+      const f1 = parseFloat(aiData.frekans) || 1;
+      const s1 = parseFloat(aiData.siddet) || 1;
+      const skor1 = FineKinney.calculateRiskScore(o1, f1, s1);
+      
+      const o2 = parseFloat(aiData.onlemSonrasiOlasilik) || Math.max(1, o1 - 2);
+      const f2 = parseFloat(aiData.onlemSonrasiFrekans) || Math.max(1, f1 - 1);
+      const s2 = parseFloat(aiData.onlemSonrasiSiddet) || Math.max(1, s1 - 1);
+      const skor2 = FineKinney.calculateRiskScore(o2, f2, s2);
+      
+      await db.add('risks', {
+        assessmentId: state.currentAssessmentId,
+        siraNo: i + 1,
+        surecPozisyonDepartman: document.getElementById('analyzer-departman')?.value || 'Genel',
+        tehlikeTanimi: aiData.tehlikeTanimi || '',
+        tehlikeKaynagi: aiData.tehlikeKaynagi || '',
+        risk: aiData.risk || '',
+        ilgiliMevzuat: aiData.ilgiliMevzuat || '',
+        mevcutDurum: aiData.mevcutDurum || '',
+        olasilik: o1,
+        frekans: f1,
+        siddet: s1,
+        riskSkoru: skor1,
+        ilaveAksiyon: aiData.ilaveAksiyon || aiData.alinanOnlem || '',
+        onlemSonrasiOlasilik: o2,
+        onlemSonrasiFrekans: f2,
+        onlemSonrasiSiddet: s2,
+        onlemSonrasiRiskSkoru: skor2,
+        dof: ExcelExport.generateDOFNumber(),
+        sorumlu: 'İSG Uzmanı',
+        terminTarihi: '',
+        durum: 'Açık'
+      });
+      successCount++;
+    }
+    
+    showToast(`${successCount} risk başarıyla kaydedildi!`, 'success');
+    
+    // Sonuçları temizle ki tekrar kaydetmesin
+    document.getElementById('ai-results-container').innerHTML = '<p style="color:green; font-weight:bold;">Tüm riskler kaydedildi.</p>';
+    state.aiResults = null;
+    
+  } catch (err) {
+    console.error(err);
+    showToast('Kaydedilirken hata oluştu: ' + err.message, 'error');
+  } finally {
+    toggleLoading(false);
+  }
+};
+
 
 document.getElementById('btn-new-analysis')?.addEventListener('click', () => {
   initAnalyzerPage();
