@@ -678,7 +678,6 @@ window.editAndSaveRisk = (aiData, index) => {
           return true;
         }
       }
-      }
     }
   ]);
 };
