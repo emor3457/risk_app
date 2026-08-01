@@ -1,13 +1,56 @@
-// Gemini API Entegrasyonu — İSG Risk Analizi
+// AI API Entegrasyonu — İSG Risk Analizi (Gemini, Groq, OpenRouter)
 import { TANIMLAR } from './tanimlar.js';
 
-const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const GROQ_BASE   = 'https://api.groq.com/openai/v1/chat/completions';
+const OPENROUTER_BASE = 'https://openrouter.ai/api/v1/chat/completions';
 
-export const MODELS = [
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'Hızlı ve ücretsiz', free: true },
-  { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite', description: 'En hızlı, basit analizler', free: true },
-  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: 'En gelişmiş analiz', free: false }
+// SİSTEM TANIMI: Kullanıcının seçebileceği provider + model kombinasyonları
+export const PROVIDERS = [
+  {
+    id: 'gemini',
+    name: 'Google Gemini',
+    logo: '🔵',
+    apiKeyLink: 'https://aistudio.google.com/app/apikey',
+    apiKeyHint: 'Google AI Studio\'dan ücretsiz anahtar alın (AIzaSy... ile başlar)',
+    apiKeyPlaceholder: 'AIzaSy...',
+    models: [
+      { id: 'gemini-2.5-flash',      name: 'Gemini 2.5 Flash',      description: 'Hızlı ve ücretsiz',         free: true  },
+      { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite', description: 'En hızlı',               free: true  },
+      { id: 'gemini-2.5-pro',        name: 'Gemini 2.5 Pro',        description: 'En gelişmiş analiz',     free: false }
+    ]
+  },
+  {
+    id: 'groq',
+    name: 'Groq (Llama / Mixtral)',
+    logo: '⚡',
+    apiKeyLink: 'https://console.groq.com/keys',
+    apiKeyHint: 'Groq Console\'dan ücretsiz anahtar alın (gsk_... ile başlar). Llama3 ve Mixtral modelleri ücretsiz.',
+    apiKeyPlaceholder: 'gsk_...',
+    models: [
+      { id: 'llama-3.3-70b-versatile',  name: 'Llama 3.3 70B',       description: 'Güçlü ve ücretsiz',    free: true  },
+      { id: 'llama-3.1-8b-instant',     name: 'Llama 3.1 8B',        description: 'En hızlı ücretsiz',   free: true  },
+      { id: 'mixtral-8x7b-32768',       name: 'Mixtral 8x7B',        description: 'Ücretsiz, çok dilli', free: true  }
+    ]
+  },
+  {
+    id: 'openrouter',
+    name: 'OpenRouter (100+ Model)',
+    logo: '🔀',
+    apiKeyLink: 'https://openrouter.ai/keys',
+    apiKeyHint: 'OpenRouter\'dan anahtar alın. Ücretsiz kredinizle Llama, Mistral, Claude vb. 100+ modele erişin.',
+    apiKeyPlaceholder: 'sk-or-...',
+    models: [
+      { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Llama 3.3 70B',    description: 'Ücretsiz - Güçlü',     free: true  },
+      { id: 'mistralai/mistral-7b-instruct:free',      name: 'Mistral 7B',      description: 'Ücretsiz - Hızlı',     free: true  },
+      { id: 'google/gemini-2.5-flash',                 name: 'Gemini 2.5 Flash', description: 'OpenRouter üzeri', free: false }
+    ]
+  }
 ];
+
+// Geriye dönük uyumluluk için — app.js hâlâ MODELS'i kullanıyor olabilir
+export const MODELS = PROVIDERS[0].models;
+
 
 function getSystemPrompt(focus, limit) {
   let prompt = `Sen bir İş Sağlığı ve Güvenliği (İSG) uzmanısın. Türkiye'deki 6331 sayılı İş Sağlığı ve Güvenliği Kanunu'na göre risk değerlendirmesi yapıyorsun. Fine-Kinney metodu kullanıyorsun.\n`;
@@ -150,38 +193,107 @@ export function setSelectedModel(modelId) {
   localStorage.setItem('gemini_model', modelId);
 }
 
+export function getSelectedProvider() {
+  return localStorage.getItem('ai_provider') || 'gemini';
+}
+
+export function setSelectedProvider(providerId) {
+  localStorage.setItem('ai_provider', providerId);
+  // Provider değişince o providerın ilk modelini seç
+  const provider = PROVIDERS.find(p => p.id === providerId);
+  if (provider && provider.models.length > 0) {
+    setSelectedModel(provider.models[0].id);
+  }
+}
+
+// Provider'a göre API key ânı getir (her provider ayrı key saklar)
+export function getProviderApiKey(providerId) {
+  return localStorage.getItem(`api_key_${providerId}`) || '';
+}
+
+export function setProviderApiKey(providerId, key) {
+  localStorage.setItem(`api_key_${providerId}`, key);
+  // Gemini için geriye dönük uyumluluk
+  if (providerId === 'gemini') localStorage.setItem('gemini_api_key', key);
+}
+
 // --- API İstekleri ---
 
 /**
  * Gemini API'ye istek gönder ve JSON yanıt al
  */
 async function callGemini(parts) {
-  const apiKey = getApiKey();
-  if (!apiKey) return { error: 'API anahtarı ayarlanmamış.' };
+  const provider = getSelectedProvider();
+  const model    = getSelectedModel();
+  const apiKey   = getProviderApiKey(provider) || getApiKey();
 
-  const model = getSelectedModel();
-  const url = `${API_BASE}/${model}:generateContent?key=${apiKey}`;
+  if (!apiKey) return { error: 'API anahtarı ayarlanmamış. Lütfen Ayarlar sayfasından API anahtarınızı girin.' };
+
+  // --- GEMINI ---
+  if (provider === 'gemini') {
+    const url = `${GEMINI_BASE}/${model}:generateContent?key=${apiKey}`;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig: { responseMimeType: 'application/json' }
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        return { error: `Gemini hatası: ${err?.error?.message || 'HTTP ' + res.status}` };
+      }
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) return { error: 'API boş yanıt döndürdü.' };
+      return JSON.parse(text);
+    } catch (e) {
+      return { error: `İstek başarısız: ${e.message}` };
+    }
+  }
+
+  // --- GROQ / OPENROUTER (OpenAI uyumlu format) ---
+  const isGroq = provider === 'groq';
+  const url = isGroq ? GROQ_BASE : OPENROUTER_BASE;
+
+  // Görsel içeren parts'ları metin'e dönüştür (bu modeller görsel desteklemeyebilir)
+  const textParts = parts.filter(p => p.text).map(p => p.text).join('\n');
+  const hasImages = parts.some(p => p.inline_data);
+  const userContent = hasImages
+    ? textParts + '\n\n[NOT: Görsel analiz desteklenmiyor, lütfen metinden analiz yap]'
+    : textParts;
 
   try {
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    };
+    if (!isGroq) headers['HTTP-Referer'] = 'https://risk-app.local';
+
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: { responseMimeType: 'application/json' }
+        model,
+        messages: [
+          { role: 'user', content: userContent }
+        ],
+        temperature: 0.3,
+        response_format: { type: 'json_object' }
       })
     });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       const msg = err?.error?.message || `HTTP ${res.status}`;
-      return { error: `API hatası: ${msg}` };
+      return { error: `${isGroq ? 'Groq' : 'OpenRouter'} hatası: ${msg}` };
     }
 
     const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const text = data?.choices?.[0]?.message?.content;
     if (!text) return { error: 'API boş yanıt döndürdü.' };
-
     return JSON.parse(text);
   } catch (e) {
     return { error: `İstek başarısız: ${e.message}` };

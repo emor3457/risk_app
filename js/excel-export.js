@@ -293,3 +293,123 @@ export async function exportToExcel(assessmentData) {
 
     XLSX.writeFile(wb, fileName);
 }
+
+/**
+ * TÜM değerlendirmeleri tek bir Excel dosyasına aktarır (her biri ayrı sayfa)
+ * @param {Array<{workplace, risks, assessmentDate}>} allData
+ */
+export async function exportAllToExcel(allData) {
+    const wb = XLSX.utils.book_new();
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+    // Özet sayfası
+    const summaryRows = [
+        ['TÜM RİSK DEĞERLENDİRMELERİ KONSOLDE RAPORU', '', '', '', '', '', ''],
+        ['Rapor Tarihi:', new Date().toLocaleDateString('tr-TR'), '', '', '', '', ''],
+        [''],
+        ['Sıra', 'İşyeri / İşveren', 'Değerlendirme Tarihi', 'Toplam Risk', 'Yüksek Risk (Sev.1-2)', 'Orta Risk (Sev.3)', 'Kabul Edil. (Sev.4-5)']
+    ];
+
+    for (let i = 0; i < allData.length; i++) {
+        const { workplace = {}, risks = [], assessmentDate } = allData[i];
+        const high   = risks.filter(r => { const s = (r.olasilik||0)*(r.frekans||0)*(r.siddet||0); return s >= 200; }).length;
+        const mid    = risks.filter(r => { const s = (r.olasilik||0)*(r.frekans||0)*(r.siddet||0); return s >= 70 && s < 200; }).length;
+        const low    = risks.filter(r => { const s = (r.olasilik||0)*(r.frekans||0)*(r.siddet||0); return s < 70; }).length;
+        summaryRows.push([
+            i + 1,
+            workplace.isverenAdi || workplace.ad || 'Bilinmiyor',
+            assessmentDate ? new Date(assessmentDate).toLocaleDateString('tr-TR') : '',
+            risks.length, high, mid, low
+        ]);
+    }
+
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+    wsSummary['!cols'] = [{ wch: 6 }, { wch: 30 }, { wch: 20 }, { wch: 12 }, { wch: 20 }, { wch: 16 }, { wch: 20 }];
+    // Başlık merge
+    if (!wsSummary['!merges']) wsSummary['!merges'] = [];
+    wsSummary['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } });
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Özet');
+
+    // Her değerlendirme için ayrı sayfa
+    for (let i = 0; i < allData.length; i++) {
+        const { workplace = {}, risks = [], compliance = [], assessmentDate } = allData[i];
+        const merges = [];
+        const rows = [];
+
+        rows.push([
+            'İşveren', workplace.isverenAdi || '', '',
+            'Sorgu/Birim/Proje', workplace.sorguBirimProje || '', '',
+            'Doküman No', workplace.dokumanNo || '',
+            'Revizyon Tarihi', formatDate(workplace.revTarihi),
+            'Yenileme Tarihi', formatDate(workplace.yenilemeTarihi),
+            ...new Array(8).fill('')
+        ]);
+        addMerge(merges, 0, 1, 0, 2);
+        addMerge(merges, 0, 4, 0, 5);
+
+        rows.push([
+            'Ad', workplace.ad || '', '', '', '',
+            '', 'Rev No', workplace.revNo || '',
+            'Oluşturma Tarihi', formatDate(workplace.olusturmaTarihi),
+            'Metot', 'FINE-KINNEY',
+            ...new Array(8).fill('')
+        ]);
+        addMerge(merges, 1, 1, 1, 5);
+
+        rows.push(new Array(20).fill(''));
+        rows.push(new Array(20).fill(''));
+
+        const colHeaders = [
+            'Sıra No', 'Faaliyet/Bölüm',
+            'Tehlike Tanımı', 'Tehlike Kaynağı', 'Risk', 'İlgili Mevzuat',
+            'Mevcut Durum', 'O₁', 'F₁', 'Ş₁', 'Risk Puanı (Mevcut)',
+            'İlave Aksiyon', 'O₂', 'F₂', 'Ş₂', 'Risk Puanı (Önlem Sonrası)',
+            'DÖF', 'Sorumlu', 'Termin', 'Durum'
+        ];
+        rows.push(colHeaders);
+
+        for (const risk of risks) {
+            const rp  = (risk.olasilik ?? 0) * (risk.frekans ?? 0) * (risk.siddet ?? 0);
+            const rp2 = (risk.onlemSonrasiOlasilik ?? 0) * (risk.onlemSonrasiFrekans ?? 0) * (risk.onlemSonrasiSiddet ?? 0);
+            rows.push([
+                risk.siraNo || '', risk.surecPozisyonDepartman || '',
+                risk.tehlikeTanimi || '', risk.tehlikeKaynagi || '',
+                risk.risk || '', risk.ilgiliMevzuat || '',
+                risk.mevcutDurum || '',
+                risk.olasilik ?? '', risk.frekans ?? '', risk.siddet ?? '',
+                rp || risk.riskSkoru || '',
+                risk.ilaveAksiyon || risk.alinanOnlem || '',
+                risk.onlemSonrasiOlasilik ?? '', risk.onlemSonrasiFrekans ?? '', risk.onlemSonrasiSiddet ?? '',
+                rp2 || risk.onlemSonrasiRiskSkoru || '',
+                risk.dof || '', risk.sorumlu || '',
+                risk.terminTarihi ? formatDate(risk.terminTarihi) : '',
+                risk.durum || ''
+            ]);
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws['!cols'] = COL_WIDTHS;
+        ws['!merges'] = merges;
+
+        // Risk puanı renklendirmesi
+        for (let j = 0; j < risks.length; j++) {
+            const r = 5 + j;
+            const rp = (risks[j].olasilik ?? 0) * (risks[j].frekans ?? 0) * (risks[j].siddet ?? 0);
+            if (rp > 0) {
+                const ref = XLSX.utils.encode_cell({ r, c: 10 });
+                if (ws[ref]) ws[ref].s = { ...STYLE_DATA_CENTER, fill: { fgColor: { rgb: riskColor(rp) } }, font: { bold: true, color: { rgb: 'FFFFFF' } } };
+            }
+            const rp2 = (risks[j].onlemSonrasiOlasilik ?? 0) * (risks[j].onlemSonrasiFrekans ?? 0) * (risks[j].onlemSonrasiSiddet ?? 0);
+            if (rp2 > 0) {
+                const ref2 = XLSX.utils.encode_cell({ r, c: 15 });
+                if (ws[ref2]) ws[ref2].s = { ...STYLE_DATA_CENTER, fill: { fgColor: { rgb: riskColor(rp2) } }, font: { bold: true, color: { rgb: 'FFFFFF' } } };
+            }
+        }
+
+        // Sayfa ismi: "1-IsyeriAdi" (max 31 karakter Excel limiti)
+        const sheetName = `${i + 1}-${(workplace.isverenAdi || workplace.ad || 'Rapor').replace(/[\\\/*?\[\]:]/g, '').slice(0, 25)}`;
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    }
+
+    XLSX.writeFile(wb, `Risk_Tum_Degerlendirmeler_${date}.xlsx`);
+}

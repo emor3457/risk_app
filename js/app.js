@@ -97,68 +97,98 @@ async function loadDashboard() {
 // ==========================================
 
 function loadSettings() {
-  const apiKey = GeminiAPI.getApiKey();
-  const apiKeyInput = document.getElementById('settings-api-key');
-  if (apiKeyInput && apiKey) {
-    apiKeyInput.value = apiKey;
-  }
-  
-  const modelsContainer = document.getElementById('settings-models');
-  if (modelsContainer) {
-    modelsContainer.innerHTML = '';
-    const selectedModel = GeminiAPI.getSelectedModel();
-    
-    GeminiAPI.MODELS.forEach(model => {
-      const isSelected = model.id === selectedModel;
-      
-      const option = createElement('label', { 
-        className: `model-option ${isSelected ? 'selected' : ''}` 
-      }, [
-        createElement('div', { className: 'model-radio' }),
-        createElement('input', { 
-          type: 'radio', 
-          name: 'ai_model', 
-          value: model.id,
-          checked: isSelected,
-          onchange: (e) => {
-            document.querySelectorAll('.model-option').forEach(el => el.classList.remove('selected'));
-            e.target.closest('.model-option').classList.add('selected');
-            GeminiAPI.setSelectedModel(model.id);
-            showToast('Model seçimi güncellendi', 'success');
-          }
-        }),
-        createElement('div', { className: 'model-info' }, [
-          createElement('div', { className: 'model-name' }, model.name),
-          createElement('div', { className: 'model-desc' }, model.description)
-        ]),
-        createElement('div', { 
-          className: `model-badge ${model.free ? 'free' : 'paid'}` 
-        }, model.free ? 'Ücretsiz' : 'Ücretli')
-      ]);
-      
-      modelsContainer.appendChild(option);
+  const selectedProvider = GeminiAPI.getSelectedProvider ? GeminiAPI.getSelectedProvider() : 'gemini';
+  const providerContainer = document.getElementById('settings-providers');
+
+  if (providerContainer) {
+    providerContainer.innerHTML = '';
+    GeminiAPI.PROVIDERS.forEach(provider => {
+      const isSelected = provider.id === selectedProvider;
+      const currentKey = GeminiAPI.getProviderApiKey
+        ? GeminiAPI.getProviderApiKey(provider.id)
+        : (provider.id === 'gemini' ? GeminiAPI.getApiKey() : '');
+
+      const div = document.createElement('div');
+      div.className = `provider-card ${isSelected ? 'selected' : ''}`;
+      div.style.cssText = 'margin-bottom:12px; border-radius:10px; overflow:hidden; border:2px solid ' + (isSelected ? 'var(--accent)' : 'transparent');
+
+      const headerHtml = `<div onclick="window.selectProvider('${provider.id}')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg-surface-2)">
+        <span style="font-size:20px">${provider.logo}</span>
+        <div style="flex:1">
+          <div style="font-weight:600">${provider.name}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${provider.models.filter(m=>m.free).length} ucretsiz model</div>
+        </div>
+        <div style="color:var(--accent);font-size:18px">${isSelected ? '✔' : ''}</div>
+      </div>`;
+
+      const detailHtml = isSelected ? `<div style="padding:12px;background:var(--bg-surface)">
+        <div class="form-group" style="margin-bottom:8px">
+          <label class="form-label">API Anahtari</label>
+          <input type="password" id="api-key-${provider.id}" class="form-input"
+            placeholder="${provider.apiKeyPlaceholder}" value="${currentKey}">
+          <div class="form-hint">
+            <a href="${provider.apiKeyLink}" target="_blank" rel="noopener">API Anahtari Al</a> - ${provider.apiKeyHint}
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="form-label">Model Secimi</label>
+          ${provider.models.map(m => `<label style="display:flex;align-items:center;gap:8px;padding:6px;border-radius:6px;cursor:pointer;background:${GeminiAPI.getSelectedModel() === m.id ? 'var(--bg-surface-2)' : 'transparent'}">
+            <input type="radio" name="ai_model_${provider.id}" value="${m.id}"
+              ${GeminiAPI.getSelectedModel() === m.id ? 'checked' : ''}
+              onchange="window.GeminiAPI_setModel('${m.id}')">
+            <span style="flex:1"><strong>${m.name}</strong> - ${m.description}</span>
+            <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:${m.free ? '#16a34a' : '#6b7280'};color:white">${m.free ? 'Ucretsiz' : 'Ucretli'}</span>
+          </label>`).join('')}
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="window.saveProviderKey('${provider.id}')">Anahtari Kaydet ve Test Et</button>
+      </div>` : '';
+
+      div.innerHTML = headerHtml + detailHtml;
+      providerContainer.appendChild(div);
     });
   }
+
+  // Eski settings-models/settings-api-key varsa gizle
+  const oldModels = document.getElementById('settings-models');
+  if (oldModels) oldModels.closest('.form-group') && (oldModels.closest('.form-group').style.display = 'none');
+  const oldKey = document.getElementById('settings-api-key');
+  if (oldKey) oldKey.closest('.form-group') && (oldKey.closest('.form-group').style.display = 'none');
+  const oldBtn = document.getElementById('btn-save-settings');
+  if (oldBtn) oldBtn.style.display = 'none';
 }
 
-document.getElementById('btn-save-settings')?.addEventListener('click', async () => {
-  const apiKey = document.getElementById('settings-api-key').value.trim();
-  
-  if (!apiKey) {
-    showToast('Lütfen geçerli bir API anahtarı girin', 'error');
+window.selectProvider = (providerId) => {
+  GeminiAPI.setSelectedProvider(providerId);
+  loadSettings();
+  showToast(providerId + ' secildi', 'success');
+};
+
+window.GeminiAPI_setModel = (modelId) => {
+  GeminiAPI.setSelectedModel(modelId);
+  showToast('Model guncellendi', 'success');
+};
+
+window.saveProviderKey = async (providerId) => {
+  const input = document.getElementById('api-key-' + providerId);
+  if (!input || !input.value.trim()) {
+    showToast('Lutfen API anahtari girin', 'error');
     return;
   }
-  
-  toggleLoading(true, 'Bağlantı test ediliyor...');
-  const testResult = await GeminiAPI.testConnection(apiKey);
+  const key = input.value.trim();
+  toggleLoading(true, 'Baglanti test ediliyor...');
+  const testResult = await GeminiAPI.testConnection(key);
   toggleLoading(false);
-  
   if (testResult.success) {
-    GeminiAPI.setApiKey(apiKey);
-    showToast('API Anahtarı başarıyla kaydedildi ve doğrulandı', 'success');
+    GeminiAPI.setProviderApiKey(providerId, key);
+    showToast('API anahtari kaydedildi ve dogrulandi', 'success');
   } else {
-    showToast(`Hata: ${testResult.error}`, 'error');
+    showToast('Hata: ' + testResult.error, 'error');
   }
+};
+
+document.getElementById('btn-save-settings')?.addEventListener('click', async () => {
+  const providerId = GeminiAPI.getSelectedProvider ? GeminiAPI.getSelectedProvider() : 'gemini';
+  window.saveProviderKey(providerId);
 });
 
 // ==========================================
@@ -694,7 +724,13 @@ async function loadAssessments() {
       return;
     }
     
-    let html = '<div class="grid" style="display: grid; gap: 16px;">';
+    let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+      <h3>Tum Risk Degerlendirmeleri</h3>
+      <button class="btn btn-success" onclick="window.exportAllAssessments()" style="display:flex;align-items:center;gap:8px;font-weight:600;">
+        Tumunu Tek Excel'e Raporla
+      </button>
+    </div>
+    <div class="grid" style="display: grid; gap: 16px;">`;
     
     for (const ast of assessments) {
       const wp = workplaces.find(w => w.id === ast.workplaceId) || {};
@@ -817,26 +853,48 @@ window.viewAssessment = async (astId) => {
 
 window.exportAssessment = async (wpId, astId) => {
   try {
-    toggleLoading(true, 'Excel raporu oluşturuluyor...');
-    
+    toggleLoading(true, 'Excel raporu olusturuluyor...');
     const workplace = await db.get('workplaces', wpId);
     const risks = await db.getAllByIndex('risks', 'assessmentId', astId);
-    
     const assessmentData = {
-      workplace: workplace,
-      risks: risks,
+      workplace,
+      risks,
       compliance: [
-        { label: 'MSDS Eğitimleri', durum: 'Sonra eklenecek' },
-        { label: 'Makine Kullanma Talimatı', durum: 'Mevcut' },
-        { label: 'Acil Durum Planı', durum: 'Eksik' }
+        { label: 'MSDS Egitimleri', durum: 'Sonra eklenecek' },
+        { label: 'Makine Kullanma Talimati', durum: 'Mevcut' },
+        { label: 'Acil Durum Plani', durum: 'Eksik' }
       ]
     };
-    
     await ExcelExport.exportToExcel(assessmentData);
     showToast('Excel raporu indirildi', 'success');
   } catch (err) {
     console.error(err);
-    showToast('Excel oluşturulurken hata: ' + err.message, 'error');
+    showToast('Excel olusturulurken hata: ' + err.message, 'error');
+  } finally {
+    toggleLoading(false);
+  }
+};
+
+window.exportAllAssessments = async () => {
+  try {
+    const assessments = await db.getAll('assessments');
+    if (assessments.length === 0) {
+      showToast('Hicbir degerlendirme bulunamadi.', 'warning');
+      return;
+    }
+    toggleLoading(true, assessments.length + ' degerlendirme raporlaniyor...');
+    const workplaces = await db.getAll('workplaces');
+    const allData = [];
+    for (const ast of assessments) {
+      const workplace = workplaces.find(w => w.id === ast.workplaceId) || {};
+      const risks = await db.getAllByIndex('risks', 'assessmentId', ast.id);
+      allData.push({ workplace, risks, assessmentDate: ast.tarih });
+    }
+    await ExcelExport.exportAllToExcel(allData);
+    showToast(assessments.length + ' degerlendirme basariyla raporlandi!', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Rapor olusturulurken hata: ' + err.message, 'error');
   } finally {
     toggleLoading(false);
   }

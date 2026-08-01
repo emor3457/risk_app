@@ -134,23 +134,19 @@
              ============================================== -->
         <section id="page-settings" class="page-section">
           <div class="card">
-            <h3 class="settings-section-title">Google Gemini AI Ayarları</h3>
-            <p class="text-muted text-sm mb-3">Saha fotoğraflarını ve videolarını analiz etmek için Gemini API anahtarınızı girin. İhtiyacınıza göre <span style="color:var(--risk-important);font-weight:600;">ücretsiz (Flash)</span> veya daha gelişmiş analizler için <span style="color:var(--color-primary);font-weight:600;">ücretli/kurumsal (Pro)</span> API modellerini kullanabilirsiniz.</p>
-            
-            <div class="form-group">
-              <label class="form-label">API Anahtarı <span class="required">*</span></label>
-              <input type="password" id="settings-api-key" class="form-input" placeholder="AIzaSy...">
-              <div class="form-hint"><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio'dan ücretsiz anahtar alın</a>. Anahtar cihazınızda güvenle saklanır.</div>
+            <h3 class="settings-section-title">AI Model Ayarlari</h3>
+            <p class="text-muted text-sm mb-3">
+              Risk analizi icin yapay zeka saglayicisi secin. Her saglayici icin API anahtarinizi ayri ayri girerek kaydedebilirsiniz.
+              Ucretsiz modeller ile baslayip ihtiyaca gore guclu modellere gecis yapabilirsiniz.
+            </p>
+            <!-- Coklu provider konteyneri - JS tarafindan doldurulacak -->
+            <div id="settings-providers"></div>
+            <!-- Geriye donuk uyumluluk icin gizli eski elemanlar -->
+            <div style="display:none">
+              <input type="password" id="settings-api-key">
+              <div id="settings-models"></div>
+              <button id="btn-save-settings"></button>
             </div>
-            
-            <div class="form-group mt-3">
-              <label class="form-label">Yapay Zeka Modeli</label>
-              <div class="model-options" id="settings-models">
-                <!-- JS ile doldurulacak -->
-              </div>
-            </div>
-            
-            <button id="btn-save-settings" class="btn btn-primary mt-2">Ayarları Kaydet ve Test Et</button>
           </div>
         </section>
 
