@@ -4,6 +4,9 @@ import { TANIMLAR } from './tanimlar.js';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const GROQ_BASE   = 'https://api.groq.com/openai/v1/chat/completions';
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1/chat/completions';
+const NVIDIA_BASE = 'https://integrate.api.nvidia.com/v1/chat/completions';
+const DEEPSEEK_BASE = 'https://api.deepseek.com/chat/completions';
+const KIMI_BASE = 'https://api.moonshot.cn/v1/chat/completions';
 
 // SİSTEM TANIMI: Kullanıcının seçebileceği provider + model kombinasyonları
 export const PROVIDERS = [
@@ -44,6 +47,43 @@ export const PROVIDERS = [
       { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Llama 3.3 70B',    description: 'Ücretsiz - Güçlü',     free: true  },
       { id: 'mistralai/mistral-7b-instruct:free',      name: 'Mistral 7B',      description: 'Ücretsiz - Hızlı',     free: true  },
       { id: 'google/gemini-2.5-flash',                 name: 'Gemini 2.5 Flash', description: 'OpenRouter üzeri', free: false }
+    ]
+  },
+  {
+    id: 'nvidia',
+    name: 'NVIDIA NIM',
+    logo: '🟢',
+    apiKeyLink: 'https://build.nvidia.com/models',
+    apiKeyHint: 'Nvidia Developer sayfasından 1000 ücretsiz kredi alabilirsiniz (nvapi- ile başlar).',
+    apiKeyPlaceholder: 'nvapi-...',
+    models: [
+      { id: 'meta/llama-3.1-405b-instruct', name: 'Llama 3.1 405B', description: 'Nvidia üzerinden devasa Llama', free: true },
+      { id: 'meta/llama-3.3-70b-instruct',  name: 'Llama 3.3 70B',  description: 'Hızlı ve yetenekli', free: true },
+      { id: 'nvidia/nemotron-4-340b-instruct', name: 'Nemotron 340B', description: 'Nvidia özel modeli', free: true }
+    ]
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    logo: '🐋',
+    apiKeyLink: 'https://platform.deepseek.com/',
+    apiKeyHint: 'DeepSeek platformundan anahtar alın (sk- ile başlar). Ucuz ve çok başarılı kod/mantık modeli.',
+    apiKeyPlaceholder: 'sk-...',
+    models: [
+      { id: 'deepseek-chat',   name: 'DeepSeek V3 (Chat)',   description: 'Genel kullanım için', free: false },
+      { id: 'deepseek-reasoner', name: 'DeepSeek R1 (Akıl Yürütme)', description: 'Karmaşık mantık işlemleri için (CoT)', free: false }
+    ]
+  },
+  {
+    id: 'kimi',
+    name: 'Kimi (Moonshot AI)',
+    logo: '🌙',
+    apiKeyLink: 'https://platform.moonshot.cn/console/api-keys',
+    apiKeyHint: 'Moonshot AI platformundan anahtar alın. (sk- ile başlar). Geniş bağlam (context) desteği.',
+    apiKeyPlaceholder: 'sk-...',
+    models: [
+      { id: 'moonshot-v1-8k',  name: 'Kimi (8K)',  description: 'Hızlı ve temel analiz', free: false },
+      { id: 'moonshot-v1-32k', name: 'Kimi (32K)', description: 'Uzun rapor analizleri', free: false }
     ]
   }
 ];
@@ -254,9 +294,13 @@ async function callGemini(parts) {
     }
   }
 
-  // --- GROQ / OPENROUTER (OpenAI uyumlu format) ---
+  // --- GROQ / OPENROUTER / NVIDIA / DEEPSEEK / KIMI (OpenAI uyumlu format) ---
   const isGroq = provider === 'groq';
-  const url = isGroq ? GROQ_BASE : OPENROUTER_BASE;
+  let url = OPENROUTER_BASE;
+  if (provider === 'groq') url = GROQ_BASE;
+  else if (provider === 'nvidia') url = NVIDIA_BASE;
+  else if (provider === 'deepseek') url = DEEPSEEK_BASE;
+  else if (provider === 'kimi') url = KIMI_BASE;
 
   // Görsel içeren parts'ları metin'e dönüştür (bu modeller görsel desteklemeyebilir)
   const textParts = parts.filter(p => p.text).map(p => p.text).join('\n');
@@ -405,26 +449,58 @@ export async function extractVideoFrames(videoBlob, maxFrames = 4) {
  * @param {string} apiKey - Test edilecek API anahtarı
  */
 export async function testConnection(apiKey) {
+  const provider = getSelectedProvider();
   const model = getSelectedModel();
-  const url = `${API_BASE}/${model}:generateContent?key=${apiKey}`;
 
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: 'Merhaba, bağlantı testi. Sadece "ok" yaz.' }] }]
-      })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      const msg = err?.error?.message || `HTTP ${res.status}`;
-      return { success: false, error: msg };
+  if (provider === 'gemini') {
+    const url = `${GEMINI_BASE}/${model}:generateContent?key=${apiKey}`;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: 'Merhaba, bağlantı testi. Sadece "ok" yaz.' }] }]
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        return { success: false, error: err?.error?.message || `HTTP ${res.status}` };
+      }
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
     }
+  } else {
+    // OpenAI uyumlu API'ler için test
+    let url = OPENROUTER_BASE;
+    if (provider === 'groq') url = GROQ_BASE;
+    else if (provider === 'nvidia') url = NVIDIA_BASE;
+    else if (provider === 'deepseek') url = DEEPSEEK_BASE;
+    else if (provider === 'kimi') url = KIMI_BASE;
 
-    return { success: true };
-  } catch (e) {
-    return { success: false, error: e.message };
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      };
+      if (provider === 'openrouter') headers['HTTP-Referer'] = 'https://risk-app.local';
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: 'Merhaba, bağlantı testi. Sadece "ok" yaz.' }],
+          max_tokens: 10
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        return { success: false, error: err?.error?.message || `HTTP ${res.status}` };
+      }
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
   }
 }
