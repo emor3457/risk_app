@@ -18,9 +18,12 @@ export const PROVIDERS = [
     apiKeyHint: 'Google AI Studio\'dan ücretsiz anahtar alın (AIzaSy... ile başlar)',
     apiKeyPlaceholder: 'AIzaSy...',
     models: [
-      { id: 'gemini-2.5-flash',      name: 'Gemini 2.5 Flash',      description: 'Hızlı ve ücretsiz',         free: true  },
-      { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite', description: 'En hızlı',               free: true  },
-      { id: 'gemini-2.5-pro',        name: 'Gemini 2.5 Pro',        description: 'En gelişmiş analiz',     free: false }
+      { id: 'gemini-1.5-flash',      name: 'Gemini 1.5 Flash',      description: 'Hızlı ve dengeli (Önerilen)',  free: true  },
+      { id: 'gemini-1.5-pro',        name: 'Gemini 1.5 Pro',        description: 'Karmaşık analizler için',       free: true  },
+      { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',      description: 'Yeni nesil hızlı',             free: true  },
+      { id: 'gemini-2.5-flash',      name: 'Gemini 2.5 Flash',      description: 'En son nesil (Yüksek talep)',   free: true  },
+      { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite', description: 'En hızlı (Hafif)',             free: true  },
+      { id: 'gemini-2.5-pro',        name: 'Gemini 2.5 Pro',        description: 'En gelişmiş analiz',            free: false }
     ]
   },
   {
@@ -230,7 +233,7 @@ export function setApiKey(key) {
 }
 
 export function getSelectedModel() {
-  return localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
+  return localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
 }
 
 export function setSelectedModel(modelId) {
