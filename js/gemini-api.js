@@ -145,24 +145,28 @@ ${TANIMLAR.MEVZUATLAR.join("\n")}
 - Kişisel koruyucu donanım (KKD) kullanımındaki eksiklikler veya KKD formlarının olmaması.
 Bu tür genel durumları da birer risk maddesi (tehlike) olarak ekleyebilirsin.
 
+ÖZEL TALİMAT (EKSİK FORM DOLDURMA):
+Eğer kullanıcı size mevcut bir risk değerlendirmesi taslağını (PDF veya tablo metni) kopyalayıp gönderdiyse ve bazı sütunlar (Tehlike Kaynağı, Risk, İlgili Mevzuat, Puanlar vb.) eksik veya boşsa; satır satır tüm tehlikeleri analiz et ve bu kurallara göre EKSİK KALAN TÜM HÜCRELERİ doldurarak eksiksiz bir liste döndür.
+
 Verilen medyayı ve metni analiz et ve tespit ettiğin TÜM tehlikeleri aşağıdaki JSON formatında döndür.
 Bu format, kurumsal risk değerlendirme tablosunun (riskcikti) sütunlarıyla BİREBİR uyumludur. Aşağıdaki sıra ve alan adlarının DIŞINA ÇIKMA:
 
 Tablo sütun sırası:
 1. TEHLİKE TANIMI     → tehlikeTanimi
 2. TEHLİKE KAYNAĞI   → tehlikeKaynagi   (tanimlar listesinden)
-3. RİSK              → risk              (tanimlar listesinden, virgülle birden fazla yazılabilir)
-4. İLGİLİ MEVZUAT   → ilgiliMevzuat    (tanimlar mevzuat listesinden)
-5. MEVCUT DURUM      → mevcutDurum
-6. OLASILIK          → olasilik         (mevcut durum)
-7. FREKANS           → frekans          (mevcut durum)
-8. ŞİDDET            → siddet           (mevcut durum)
-9. RİSK PUANI        → (otomatik: olasilik × frekans × siddet, hesaplamana gerek yok)
-10. İLAVE AKSİYON   → ilaveAksiyon
-11. OLASILIK         → onlemSonrasiOlasilik  (önlem sonrası)
-12. FREKANS          → onlemSonrasiFrekans   (önlem sonrası)
-13. ŞİDDET           → onlemSonrasiSiddet   (önlem sonrası)
-14. RİSK PUANI       → (otomatik: önlem sonrası çarpım, hesaplamana gerek yok)
+3. ETKİLENENLER      → etkilenenler     (Örn: Çalışanlar, Ziyaretçiler)
+4. RİSK              → risk              (tanimlar listesinden, virgülle birden fazla yazılabilir)
+5. İLGİLİ MEVZUAT   → ilgiliMevzuat    (tanimlar mevzuat listesinden)
+6. MEVCUT DURUM      → mevcutDurum
+7. OLASILIK          → olasilik         (mevcut durum)
+8. FREKANS           → frekans          (mevcut durum)
+9. ŞİDDET            → siddet           (mevcut durum)
+10. RİSK PUANI        → (otomatik: olasilik × frekans × siddet, hesaplamana gerek yok)
+11. İLAVE AKSİYON   → ilaveAksiyon
+12. OLASILIK         → onlemSonrasiOlasilik  (önlem sonrası)
+13. FREKANS          → onlemSonrasiFrekans   (önlem sonrası)
+14. ŞİDDET           → onlemSonrasiSiddet   (önlem sonrası)
+15. RİSK PUANI       → (otomatik: önlem sonrası çarpım, hesaplamana gerek yok)
 
 {
   "tehlikeler": [

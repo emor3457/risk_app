@@ -37,6 +37,7 @@ const COL_WIDTHS = [
     { wch: 25 },  // Faaliyet/Bölüm
     { wch: 30 },  // Tehlike Tanımı
     { wch: 25 },  // Tehlike Kaynağı
+    { wch: 15 },  // Etkilenenler
     { wch: 25 },  // Risk
     { wch: 30 },  // İlgili Mevzuat
     { wch: 35 },  // Mevcut Durum
@@ -146,7 +147,7 @@ export async function exportToExcel(assessmentData) {
     // ── Satır 5: Sütun başlıkları — riskcikti.pdf formatı ──
     const colHeaders = [
         'Sıra No', 'Faaliyet/Bölüm',
-        'Tehlike Tanımı', 'Tehlike Kaynağı', 'Risk', 'İlgili Mevzuat',
+        'Tehlike Tanımı', 'Tehlike Kaynağı', 'Etkilenenler', 'Risk', 'İlgili Mevzuat',
         'Mevcut Durum', 'O₁', 'F₁', 'Ş₁', 'Risk Puanı (Mevcut)',
         'İlave Aksiyon', 'O₂', 'F₂', 'Ş₂', 'Risk Puanı (Önlem Sonrası)',
         'DÖF', 'Sorumlu', 'Termin', 'Durum'
@@ -163,6 +164,7 @@ export async function exportToExcel(assessmentData) {
             // Yeni riskcikti sütunları:
             risk.tehlikeTanimi || '',
             risk.tehlikeKaynagi || '',
+            risk.etkilenenler || '',
             risk.risk || '',
             risk.ilgiliMevzuat || '',
             risk.mevcutDurum || '',
@@ -183,24 +185,24 @@ export async function exportToExcel(assessmentData) {
     }
 
     // ── 2 boş satır ──
-    rows.push(new Array(20).fill(''));
-    rows.push(new Array(20).fill(''));
+    rows.push(new Array(21).fill(''));
+    rows.push(new Array(21).fill(''));
 
     // ── Bakım Çalışmaları İstatistiği ──
     const bakimHeaderRow = rows.length;
-    rows.push(['BAKIM ÇALIŞMALARI İSTATİSTİĞİ', ...new Array(19).fill('')]);
+    rows.push(['BAKIM ÇALIŞMALARI İSTATİSTİĞİ', ...new Array(20).fill('')]);
     addMerge(merges, bakimHeaderRow, 0, bakimHeaderRow, 19);
 
     const kaynaklarRow = rows.length;
-    rows.push(['KAYNAKLARIN TEHLİKE LİSTESİ', ...new Array(19).fill('')]);
+    rows.push(['KAYNAKLARIN TEHLİKE LİSTESİ', ...new Array(20).fill('')]);
     addMerge(merges, kaynaklarRow, 0, kaynaklarRow, 19);
 
     // ── Boş satır ──
-    rows.push(new Array(20).fill(''));
+    rows.push(new Array(21).fill(''));
 
     // ── İSG & MSDS Bölümü ──
     const isgHeaderRow = rows.length;
-    rows.push(['İSG & MSDS Eğitimleri verilmelidir', ...new Array(19).fill('')]);
+    rows.push(['İSG & MSDS Eğitimleri verilmelidir', ...new Array(20).fill('')]);
     addMerge(merges, isgHeaderRow, 0, isgHeaderRow, 19);
 
     // Uyum kalemleri
@@ -217,7 +219,7 @@ export async function exportToExcel(assessmentData) {
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = COL_WIDTHS;
     ws['!merges'] = merges;
-    const TOTAL_COLS = 20;
+    const TOTAL_COLS = 21;
 
     // ── Stil uygula ──
     // NOT: Stiller xlsx-style addon ile çalışır. Standart SheetJS CE'de
@@ -243,7 +245,7 @@ export async function exportToExcel(assessmentData) {
         for (let c = 0; c < TOTAL_COLS; c++) {
             const ref = XLSX.utils.encode_cell({ r, c });
             // riskcikti sütun sırası: O1(7) F1(8) Ş1(9) Puan1(10) ve O2(12) F2(13) Ş2(14) Puan2(15) ortalı
-            if ((c >= 7 && c <= 10) || (c >= 12 && c <= 15)) {
+            if ((c >= 8 && c <= 11) || (c >= 13 && c <= 16)) {
                 applyStyle(ws, ref, STYLE_DATA_CENTER);
             } else {
                 applyStyle(ws, ref, STYLE_DATA);
@@ -252,7 +254,7 @@ export async function exportToExcel(assessmentData) {
 
         // Risk Puanı (Mevcut) hücresine renk — sütun 10
         const rp = (risks[i].olasilik ?? 0) * (risks[i].frekans ?? 0) * (risks[i].siddet ?? 0);
-        const score1Ref = XLSX.utils.encode_cell({ r, c: 10 });
+        const score1Ref = XLSX.utils.encode_cell({ r, c: 11 });
         if (ws[score1Ref] && rp > 0) {
             const color = riskColor(rp);
             ws[score1Ref].s = {
@@ -264,7 +266,7 @@ export async function exportToExcel(assessmentData) {
 
         // Risk Puanı (Önlem Sonrası) hücresine renk — sütun 15
         const rp2 = (risks[i].onlemSonrasiOlasilik ?? 0) * (risks[i].onlemSonrasiFrekans ?? 0) * (risks[i].onlemSonrasiSiddet ?? 0);
-        const score2Ref = XLSX.utils.encode_cell({ r, c: 15 });
+        const score2Ref = XLSX.utils.encode_cell({ r, c: 16 });
         if (ws[score2Ref] && rp2 > 0) {
             const color = riskColor(rp2);
             ws[score2Ref].s = {
@@ -356,12 +358,12 @@ export async function exportAllToExcel(allData) {
         ]);
         addMerge(merges, 1, 1, 1, 5);
 
-        rows.push(new Array(20).fill(''));
-        rows.push(new Array(20).fill(''));
+        rows.push(new Array(21).fill(''));
+        rows.push(new Array(21).fill(''));
 
         const colHeaders = [
             'Sıra No', 'Faaliyet/Bölüm',
-            'Tehlike Tanımı', 'Tehlike Kaynağı', 'Risk', 'İlgili Mevzuat',
+            'Tehlike Tanımı', 'Tehlike Kaynağı', 'Etkilenenler', 'Risk', 'İlgili Mevzuat',
             'Mevcut Durum', 'O₁', 'F₁', 'Ş₁', 'Risk Puanı (Mevcut)',
             'İlave Aksiyon', 'O₂', 'F₂', 'Ş₂', 'Risk Puanı (Önlem Sonrası)',
             'DÖF', 'Sorumlu', 'Termin', 'Durum'
@@ -373,7 +375,7 @@ export async function exportAllToExcel(allData) {
             const rp2 = (risk.onlemSonrasiOlasilik ?? 0) * (risk.onlemSonrasiFrekans ?? 0) * (risk.onlemSonrasiSiddet ?? 0);
             rows.push([
                 risk.siraNo || '', risk.surecPozisyonDepartman || '',
-                risk.tehlikeTanimi || '', risk.tehlikeKaynagi || '',
+                risk.tehlikeTanimi || '', risk.tehlikeKaynagi || '', risk.etkilenenler || '',
                 risk.risk || '', risk.ilgiliMevzuat || '',
                 risk.mevcutDurum || '',
                 risk.olasilik ?? '', risk.frekans ?? '', risk.siddet ?? '',
@@ -396,12 +398,12 @@ export async function exportAllToExcel(allData) {
             const r = 5 + j;
             const rp = (risks[j].olasilik ?? 0) * (risks[j].frekans ?? 0) * (risks[j].siddet ?? 0);
             if (rp > 0) {
-                const ref = XLSX.utils.encode_cell({ r, c: 10 });
+                const ref = XLSX.utils.encode_cell({ r, c: 11 });
                 if (ws[ref]) ws[ref].s = { ...STYLE_DATA_CENTER, fill: { fgColor: { rgb: riskColor(rp) } }, font: { bold: true, color: { rgb: 'FFFFFF' } } };
             }
             const rp2 = (risks[j].onlemSonrasiOlasilik ?? 0) * (risks[j].onlemSonrasiFrekans ?? 0) * (risks[j].onlemSonrasiSiddet ?? 0);
             if (rp2 > 0) {
-                const ref2 = XLSX.utils.encode_cell({ r, c: 15 });
+                const ref2 = XLSX.utils.encode_cell({ r, c: 16 });
                 if (ws[ref2]) ws[ref2].s = { ...STYLE_DATA_CENTER, fill: { fgColor: { rgb: riskColor(rp2) } }, font: { bold: true, color: { rgb: 'FFFFFF' } } };
             }
         }

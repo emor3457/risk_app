@@ -563,6 +563,10 @@ window.editAndSaveRisk = (aiData, index) => {
         <input type="text" id="r-tehlike-kaynagi" class="form-input" value="${aiData.tehlikeKaynagi || ''}">
       </div>
       <div class="form-group">
+        <label class="form-label">Etkilenenler</label>
+        <input type="text" id="r-etkilenenler" class="form-input" value="${aiData.etkilenenler || ''}">
+      </div>
+      <div class="form-group">
         <label class="form-label">Risk</label>
         <input type="text" id="r-risk" class="form-input" value="${aiData.risk || ''}">
       </div>
@@ -653,6 +657,7 @@ window.editAndSaveRisk = (aiData, index) => {
             surecPozisyonDepartman: document.getElementById('r-surec').value,
             tehlikeTanimi: document.getElementById('r-tehlike-tanimi').value,
             tehlikeKaynagi: document.getElementById('r-tehlike-kaynagi').value,
+            etkilenenler: document.getElementById('r-etkilenenler').value,
             risk: document.getElementById('r-risk').value,
             ilgiliMevzuat: document.getElementById('r-mevzuat').value,
             mevcutDurum: document.getElementById('r-mevcut').value,
@@ -711,6 +716,7 @@ window.saveAllRisks = async () => {
         surecPozisyonDepartman: document.getElementById('analyzer-departman')?.value || 'Genel',
         tehlikeTanimi: aiData.tehlikeTanimi || '',
         tehlikeKaynagi: aiData.tehlikeKaynagi || '',
+        etkilenenler: aiData.etkilenenler || 'Çalışanlar, Ziyaretçiler',
         risk: aiData.risk || '',
         ilgiliMevzuat: aiData.ilgiliMevzuat || '',
         mevcutDurum: aiData.mevcutDurum || '',
@@ -892,6 +898,7 @@ window.viewAssessment = async (astId) => {
         <div style="background:var(--bg-surface); padding:12px; margin-bottom:12px; border-radius:8px; border-left:4px solid ${level.color}">
           <div style="font-weight:600; margin-bottom:4px;">${idx + 1}. ${r.tehlikeTanimi || r.tehlikeKaynagi || '-'}</div>
           <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px;"><strong>Tehlike Kaynağı:</strong> ${r.tehlikeKaynagi || '-'}</div>
+          <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px;"><strong>Etkilenenler:</strong> ${r.etkilenenler || '-'}</div>
           <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px;"><strong>Risk:</strong> ${r.risk || '-'}</div>
           <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px;"><strong>Mevzuat:</strong> ${r.ilgiliMevzuat || '-'}</div>
           <div style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">${r.surecPozisyonDepartman || '-'}</div>
