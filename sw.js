@@ -1,4 +1,4 @@
-const CACHE_NAME = 'risk-analizi-v6';
+const CACHE_NAME = 'risk-analizi-v7';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

@@ -22,8 +22,8 @@ export const PROVIDERS = [
       { id: 'gemini-1.5-pro',        name: 'Gemini 1.5 Pro',        description: 'Karmaşık analizler için',       free: true  },
       { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',      description: 'Yeni nesil hızlı',             free: true  },
       { id: 'gemini-2.5-flash',      name: 'Gemini 2.5 Flash',      description: 'En son nesil (Yüksek talep)',   free: true  },
-      { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite', description: 'En hızlı (Hafif)',             free: true  },
-      { id: 'gemini-2.5-pro',        name: 'Gemini 2.5 Pro',        description: 'En gelişmiş analiz',            free: false }
+      { id: 'gemini-3.0-flash',      name: 'Gemini 3.0 Flash',      description: 'En güncel 3.0 serisi',          free: true  },
+      { id: 'gemini-3.0-pro',        name: 'Gemini 3.0 Pro',        description: 'En güncel gelişmiş sürüm',      free: false }
     ]
   },
   {
