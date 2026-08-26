@@ -283,3 +283,28 @@ export async function pickFromGallery() {
     
     return results;
 }
+
+/**
+ * Dosya sisteminden PDF belgesi seçer
+ * @returns {Promise<Array<{blob: Blob, base64: string, mimeType: string, type: string, name: string}>>}
+ */
+export async function pickPDF() {
+    const files = await pickFile('application/pdf', null, true);
+    const fileArray = Array.isArray(files) ? files : [files];
+    const results = [];
+    
+    for (const file of fileArray) {
+        const blob = new Blob([await file.arrayBuffer()], { type: file.type });
+        const base64 = await blobToBase64(blob);
+        
+        results.push({
+            blob,
+            base64,
+            mimeType: file.type || 'application/pdf',
+            type: 'pdf',
+            name: file.name
+        });
+    }
+    
+    return results;
+}

@@ -372,6 +372,15 @@ document.getElementById('btn-select-gallery')?.addEventListener('click', async (
   }
 });
 
+document.getElementById('btn-select-pdf')?.addEventListener('click', async () => {
+  try {
+    const files = await MediaHandler.pickPDF();
+    files.forEach(f => addMediaToQueue(f, f.type));
+  } catch (err) {
+    if (err.message !== 'Dosya seçilmedi' && err.message !== 'Dosya seçimi iptal edildi') showToast('PDF hatası: ' + err.message, 'error');
+  }
+});
+
 function addMediaToQueue(mediaObj, type) {
   state.mediaQueue.push({ ...mediaObj, type });
   renderMediaQueue();
@@ -399,6 +408,16 @@ function renderMediaQueue() {
         item.innerHTML = `
           <div style="width:100%; height:100%; background:#333; display:flex; align-items:center; justify-content:center;">🎬 Video</div>
           <div class="media-thumb-type">🎥</div>
+          <button class="modal-close" style="position:absolute; top:4px; right:4px; width:24px; height:24px; background:rgba(0,0,0,0.5); color:white; font-size:12px;" onclick="window.removeMedia(${index})">✕</button>
+        `;
+      } else if (media.type === 'pdf') {
+        item.innerHTML = `
+          <div style="width:100%; height:100%; background:#e11d48; color:white; display:flex; align-items:center; justify-content:center; text-align:center; font-size:12px; padding: 4px;">📄<br>${media.name || 'PDF'}</div>
+          <button class="modal-close" style="position:absolute; top:4px; right:4px; width:24px; height:24px; background:rgba(0,0,0,0.5); color:white; font-size:12px;" onclick="window.removeMedia(${index})">✕</button>
+        `;
+      } else {
+        item.innerHTML = `
+          <div style="width:100%; height:100%; background:#666; display:flex; align-items:center; justify-content:center;">Ses/Diğer</div>
           <button class="modal-close" style="position:absolute; top:4px; right:4px; width:24px; height:24px; background:rgba(0,0,0,0.5); color:white; font-size:12px;" onclick="window.removeMedia(${index})">✕</button>
         `;
       }
@@ -442,7 +461,7 @@ document.getElementById('btn-analyze')?.addEventListener('click', async () => {
     if (state.mediaQueue.length > 0) {
       const mediaItems = [];
       for (const m of state.mediaQueue) {
-        if (m.type === 'image') {
+        if (m.type === 'image' || m.type === 'pdf') {
           mediaItems.push({ base64: m.base64, mimeType: m.mimeType });
         } else if (m.type === 'video') {
           const frames = await GeminiAPI.extractVideoFrames(m.blob, 3);
