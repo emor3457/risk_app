@@ -18,14 +18,14 @@ export const PROVIDERS = [
     apiKeyHint: 'Google AI Studio\'dan ücretsiz anahtar alın (AIzaSy... ile başlar)',
     apiKeyPlaceholder: 'AIzaSy...',
     models: [
-      { id: 'gemini-3.6-flash',      name: 'Gemini 3.6 Flash',      description: 'En son güncel (Önerilen)',     free: true  },
-      { id: 'gemini-3.8-flash',      name: 'Gemini 3.8 Flash',      description: 'Yüksek hızlı yeni nesil',      free: true  },
-      { id: 'gemini-3.1-pro',        name: 'Gemini 3.1 Pro',        description: 'Gelişmiş derin analiz',         free: false },
-      { id: 'gemini-3.0-flash',      name: 'Gemini 3.0 Flash',      description: '3.0 serisi hızlı',             free: true  },
-      { id: 'gemini-3.0-pro',        name: 'Gemini 3.0 Pro',        description: '3.0 serisi gelişmiş',          free: false },
-      { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',      description: 'Yeni nesil hızlı',             free: true  },
-      { id: 'gemini-1.5-flash',      name: 'Gemini 1.5 Flash',      description: 'Kararlı klasik',               free: true  },
-      { id: 'gemini-1.5-pro',        name: 'Gemini 1.5 Pro',        description: 'Kararlı gelişmiş',             free: false }
+      { id: 'gemini-1.5-flash',      name: 'Gemini 1.5 Flash',      description: 'En kararlı ve kesintisiz (Önerilen)', free: true  },
+      { id: 'gemini-3.6-flash',      name: 'Gemini 3.6 Flash',      description: 'En son güncel sürüm',                 free: true  },
+      { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',      description: 'Yeni nesil hızlı',                    free: true  },
+      { id: 'gemini-3.8-flash',      name: 'Gemini 3.8 Flash',      description: 'Yüksek hızlı yeni nesil',             free: true  },
+      { id: 'gemini-3.1-pro',        name: 'Gemini 3.1 Pro',        description: 'Gelişmiş derin analiz',                free: false },
+      { id: 'gemini-3.0-flash',      name: 'Gemini 3.0 Flash',      description: '3.0 serisi hızlı',                    free: true  },
+      { id: 'gemini-3.0-pro',        name: 'Gemini 3.0 Pro',        description: '3.0 serisi gelişmiş',                 free: false },
+      { id: 'gemini-1.5-pro',        name: 'Gemini 1.5 Pro',        description: 'Kararlı gelişmiş',                    free: false }
     ]
   },
   {
@@ -293,27 +293,70 @@ async function callGemini(parts) {
 
   // --- GEMINI ---
   if (provider === 'gemini') {
-    const url = `${GEMINI_BASE}/${model}:generateContent?key=${apiKey}`;
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts }],
-          generationConfig: { responseMimeType: 'application/json' }
-        })
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        return { error: `Gemini hatası: ${err?.error?.message || 'HTTP ' + res.status}` };
+    // Model yoğunluğunda (high demand / 503) sırayla denenecek modeller
+    const candidateModels = [
+      model,
+      'gemini-1.5-flash',
+      'gemini-2.0-flash',
+      'gemini-3.6-flash'
+    ].filter((m, idx, arr) => m && arr.indexOf(m) === idx);
+
+    let lastError = null;
+
+    for (const currentModel of candidateModels) {
+      const url = `${GEMINI_BASE}/${currentModel}:generateContent?key=${apiKey}`;
+
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts }],
+              generationConfig: { responseMimeType: 'application/json' }
+            })
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            const errMsg = err?.error?.message || `HTTP ${res.status}`;
+            lastError = `Gemini hatası (${currentModel}): ${errMsg}`;
+
+            const isHighDemand = res.status === 503 ||
+              res.status === 429 ||
+              errMsg.toLowerCase().includes('high demand') ||
+              errMsg.toLowerCase().includes('resource_exhausted') ||
+              errMsg.toLowerCase().includes('overloaded') ||
+              errMsg.toLowerCase().includes('temporarily') ||
+              errMsg.toLowerCase().includes('quota');
+
+            if (isHighDemand) {
+              // Yoğunluk varsa kısa bekle ve bir sonraki modele geç
+              await new Promise(r => setTimeout(r, 800));
+              if (attempt === 1) break;
+              continue;
+            } else {
+              // API key hatası veya istek formatı hatası gibi kalıcı bir hataysa durdur
+              return { error: lastError };
+            }
+          }
+
+          const data = await res.json();
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!text) {
+            lastError = `API (${currentModel}) boş yanıt döndürdü.`;
+            break;
+          }
+
+          return JSON.parse(text);
+        } catch (e) {
+          lastError = `İstek başarısız (${currentModel}): ${e.message}`;
+          await new Promise(r => setTimeout(r, 800));
+        }
       }
-      const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) return { error: 'API boş yanıt döndürdü.' };
-      return JSON.parse(text);
-    } catch (e) {
-      return { error: `İstek başarısız: ${e.message}` };
     }
+
+    return { error: lastError || 'Gemini modelleri şu anda yoğun. Lütfen birkaç saniye sonra tekrar deneyin.' };
   }
 
   // --- GROQ / OPENROUTER / NVIDIA / DEEPSEEK / KIMI (OpenAI uyumlu format) ---
@@ -475,23 +518,46 @@ export async function testConnection(apiKey) {
   const model = getSelectedModel();
 
   if (provider === 'gemini') {
-    const url = `${GEMINI_BASE}/${model}:generateContent?key=${apiKey}`;
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Merhaba, bağlantı testi. Sadece "ok" yaz.' }] }]
-        })
-      });
-      if (!res.ok) {
+    const candidateModels = [
+      model,
+      'gemini-1.5-flash',
+      'gemini-2.0-flash',
+      'gemini-3.6-flash'
+    ].filter((m, idx, arr) => m && arr.indexOf(m) === idx);
+
+    let lastError = null;
+
+    for (const currentModel of candidateModels) {
+      const url = `${GEMINI_BASE}/${currentModel}:generateContent?key=${apiKey}`;
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Merhaba, bağlantı testi. Sadece "ok" yaz.' }] }]
+          })
+        });
+        if (res.ok) {
+          return { success: true };
+        }
         const err = await res.json().catch(() => ({}));
-        return { success: false, error: err?.error?.message || `HTTP ${res.status}` };
+        const errMsg = err?.error?.message || `HTTP ${res.status}`;
+        lastError = errMsg;
+
+        const isHighDemand = res.status === 503 ||
+          res.status === 429 ||
+          errMsg.toLowerCase().includes('high demand') ||
+          errMsg.toLowerCase().includes('overloaded');
+
+        if (!isHighDemand) {
+          // Geçersiz anahtar gibi kalıcı bir hataysa
+          return { success: false, error: errMsg };
+        }
+      } catch (e) {
+        lastError = e.message;
       }
-      return { success: true };
-    } catch (e) {
-      return { success: false, error: e.message };
     }
+    return { success: false, error: lastError || 'Bağlantı kurulamadı.' };
   } else {
     // OpenAI uyumlu API'ler için test
     let url = OPENROUTER_BASE;
