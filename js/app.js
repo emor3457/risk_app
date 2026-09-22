@@ -131,7 +131,10 @@ function loadSettings() {
           </div>
         </div>
         <div class="form-group" style="margin-bottom:12px">
-          <label class="form-label">Model Secimi</label>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+            <label class="form-label" style="margin:0">Model Secimi</label>
+            ${provider.id === 'gemini' ? `<button type="button" class="btn btn-ghost btn-sm" onclick="window.syncGoogleModels()" style="font-size:12px;padding:2px 8px;border:1px solid var(--border)">🔄 Modelleri Google'dan Yenile</button>` : ''}
+          </div>
           ${provider.models.map(m => `<label style="display:flex;align-items:center;gap:8px;padding:6px;border-radius:6px;cursor:pointer;background:${GeminiAPI.getSelectedModel() === m.id ? 'var(--bg-surface-2)' : 'transparent'}">
             <input type="radio" name="ai_model_${provider.id}" value="${m.id}"
               ${GeminiAPI.getSelectedModel() === m.id ? 'checked' : ''}
@@ -165,7 +168,25 @@ window.selectProvider = (providerId) => {
 
 window.GeminiAPI_setModel = (modelId) => {
   GeminiAPI.setSelectedModel(modelId);
-  showToast('Model guncellendi', 'success');
+  showToast('Model guncellendi: ' + modelId, 'success');
+};
+
+window.syncGoogleModels = async () => {
+  const input = document.getElementById('api-key-gemini');
+  const key = (input && input.value.trim()) || GeminiAPI.getProviderApiKey('gemini') || GeminiAPI.getApiKey();
+  if (!key) {
+    showToast('Lütfen önce API anahtarınızı girin', 'warning');
+    return;
+  }
+  toggleLoading(true, 'Google AI Studio modelleri çekiliyor...');
+  const res = await GeminiAPI.fetchAndSyncGoogleModels(key);
+  toggleLoading(false);
+  if (res.success) {
+    loadSettings();
+    showToast(`${res.models.length} model Google hesabınızdan güncellendi!`, 'success');
+  } else {
+    showToast('Modeller alınamadı: ' + res.error, 'error');
+  }
 };
 
 window.saveProviderKey = async (providerId) => {
@@ -180,7 +201,9 @@ window.saveProviderKey = async (providerId) => {
   toggleLoading(false);
   if (testResult.success) {
     GeminiAPI.setProviderApiKey(providerId, key);
-    showToast('API anahtari kaydedildi ve dogrulandi', 'success');
+    loadSettings();
+    const modelInfo = testResult.modelUsed ? ` (${testResult.modelUsed})` : '';
+    showToast('API anahtarı ve model başarıyla doğrulandı' + modelInfo, 'success');
   } else {
     showToast('Hata: ' + testResult.error, 'error');
   }

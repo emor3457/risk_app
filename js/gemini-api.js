@@ -18,14 +18,12 @@ export const PROVIDERS = [
     apiKeyHint: 'Google AI Studio\'dan ücretsiz anahtar alın (AIzaSy... ile başlar)',
     apiKeyPlaceholder: 'AIzaSy...',
     models: [
-      { id: 'gemini-1.5-flash',      name: 'Gemini 1.5 Flash',      description: 'En kararlı ve kesintisiz (Önerilen)', free: true  },
-      { id: 'gemini-3.6-flash',      name: 'Gemini 3.6 Flash',      description: 'En son güncel sürüm',                 free: true  },
-      { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',      description: 'Yeni nesil hızlı',                    free: true  },
-      { id: 'gemini-3.8-flash',      name: 'Gemini 3.8 Flash',      description: 'Yüksek hızlı yeni nesil',             free: true  },
-      { id: 'gemini-3.1-pro',        name: 'Gemini 3.1 Pro',        description: 'Gelişmiş derin analiz',                free: false },
-      { id: 'gemini-3.0-flash',      name: 'Gemini 3.0 Flash',      description: '3.0 serisi hızlı',                    free: true  },
-      { id: 'gemini-3.0-pro',        name: 'Gemini 3.0 Pro',        description: '3.0 serisi gelişmiş',                 free: false },
-      { id: 'gemini-1.5-pro',        name: 'Gemini 1.5 Pro',        description: 'Kararlı gelişmiş',                    free: false }
+      { id: 'gemini-3.6-flash',      name: 'Gemini 3.6 Flash',      description: 'Google Tarafından Önerilen En Güncel Model', free: true  },
+      { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',      description: 'Yeni nesil hızlı ve kararlı',             free: true  },
+      { id: 'gemini-3.8-flash',      name: 'Gemini 3.8 Flash',      description: 'Yüksek hızlı yeni nesil',                 free: true  },
+      { id: 'gemini-3.1-pro',        name: 'Gemini 3.1 Pro',        description: 'Gelişmiş derin analiz',                    free: false },
+      { id: 'gemini-3.0-flash',      name: 'Gemini 3.0 Flash',      description: '3.0 serisi hızlı',                        free: true  },
+      { id: 'gemini-3.0-pro',        name: 'Gemini 3.0 Pro',        description: '3.0 serisi gelişmiş',                     free: false }
     ]
   },
   {
@@ -92,6 +90,17 @@ export const PROVIDERS = [
     ]
   }
 ];
+
+// Dinamik olarak kaydedilmiş modeller varsa başlangıçta yükle
+try {
+  const dynamic = localStorage.getItem('gemini_dynamic_models');
+  if (dynamic) {
+    const parsed = JSON.parse(dynamic);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      PROVIDERS[0].models = parsed;
+    }
+  }
+} catch (e) {}
 
 // Geriye dönük uyumluluk için — app.js hâlâ MODELS'i kullanıyor olabilir
 export const MODELS = PROVIDERS[0].models;
@@ -279,6 +288,63 @@ export function setProviderApiKey(providerId, key) {
   if (providerId === 'gemini') localStorage.setItem('gemini_api_key', key);
 }
 
+/**
+ * Google AI Studio (ModelService.ListModels) üzerinden bu anahtara ait geçerli modelleri çeker
+ */
+export async function fetchAndSyncGoogleModels(apiKey) {
+  if (!apiKey) return { success: false, error: 'API anahtarı bulunamadı' };
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err?.error?.message || `HTTP ${res.status}` };
+    }
+    const data = await res.json();
+    if (data && Array.isArray(data.models)) {
+      // Sadece generateContent metodunu destekleyen modelleri filtrele
+      const validModels = data.models
+        .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+        .map(m => {
+          const modelId = m.name.replace(/^models\//, '');
+          const isFlash = modelId.includes('flash');
+          return {
+            id: modelId,
+            name: m.displayName || modelId,
+            description: m.description ? (m.description.slice(0, 60) + '...') : (isFlash ? 'Hızlı model' : 'Gelişmiş model'),
+            free: !modelId.includes('pro')
+          };
+        });
+
+      if (validModels.length > 0) {
+        // Öncelik: 3.6-flash, 3.8-flash, 2.0-flash, flash modelleri başa
+        validModels.sort((a, b) => {
+          if (a.id === 'gemini-3.6-flash') return -1;
+          if (b.id === 'gemini-3.6-flash') return 1;
+          if (a.id.includes('flash') && !b.id.includes('flash')) return -1;
+          if (!a.id.includes('flash') && b.id.includes('flash')) return 1;
+          return b.id.localeCompare(a.id);
+        });
+
+        const geminiProvider = PROVIDERS.find(p => p.id === 'gemini');
+        if (geminiProvider) {
+          geminiProvider.models = validModels;
+        }
+        localStorage.setItem('gemini_dynamic_models', JSON.stringify(validModels));
+
+        const currentModel = localStorage.getItem('gemini_model');
+        if (!currentModel || !validModels.some(m => m.id === currentModel)) {
+          setSelectedModel(validModels[0].id);
+        }
+
+        return { success: true, models: validModels };
+      }
+    }
+    return { success: false, error: 'Google hesabınızda generateContent destekleyen model bulunamadı.' };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
 // --- API İstekleri ---
 
 /**
@@ -293,12 +359,16 @@ async function callGemini(parts) {
 
   // --- GEMINI ---
   if (provider === 'gemini') {
+    const geminiProvider = PROVIDERS.find(p => p.id === 'gemini');
+    const availableModelIds = geminiProvider ? geminiProvider.models.map(m => m.id) : [];
+
     // Model yoğunluğunda (high demand / 503) sırayla denenecek modeller
     const candidateModels = [
       model,
-      'gemini-1.5-flash',
+      'gemini-3.6-flash',
       'gemini-2.0-flash',
-      'gemini-3.6-flash'
+      'gemini-3.8-flash',
+      ...availableModelIds
     ].filter((m, idx, arr) => m && arr.indexOf(m) === idx);
 
     let lastError = null;
@@ -515,14 +585,23 @@ export async function extractVideoFrames(videoBlob, maxFrames = 4) {
  */
 export async function testConnection(apiKey) {
   const provider = getSelectedProvider();
-  const model = getSelectedModel();
 
   if (provider === 'gemini') {
+    // 1. Önce Google ModelService.ListModels ile API anahtarını doğrula ve aktif modelleri güncelle
+    const syncRes = await fetchAndSyncGoogleModels(apiKey);
+    if (!syncRes.success) {
+      return { success: false, error: syncRes.error };
+    }
+
+    const geminiProvider = PROVIDERS.find(p => p.id === 'gemini');
+    const availableModelIds = geminiProvider ? geminiProvider.models.map(m => m.id) : [];
+
     const candidateModels = [
-      model,
-      'gemini-1.5-flash',
+      getSelectedModel(),
+      'gemini-3.6-flash',
       'gemini-2.0-flash',
-      'gemini-3.6-flash'
+      'gemini-3.8-flash',
+      ...availableModelIds
     ].filter((m, idx, arr) => m && arr.indexOf(m) === idx);
 
     let lastError = null;
@@ -538,7 +617,8 @@ export async function testConnection(apiKey) {
           })
         });
         if (res.ok) {
-          return { success: true };
+          setSelectedModel(currentModel);
+          return { success: true, modelsSynced: true, modelUsed: currentModel };
         }
         const err = await res.json().catch(() => ({}));
         const errMsg = err?.error?.message || `HTTP ${res.status}`;
@@ -550,8 +630,9 @@ export async function testConnection(apiKey) {
           errMsg.toLowerCase().includes('overloaded');
 
         if (!isHighDemand) {
-          // Geçersiz anahtar gibi kalıcı bir hataysa
-          return { success: false, error: errMsg };
+          if (res.status === 400 && errMsg.includes('API key not valid')) {
+            return { success: false, error: errMsg };
+          }
         }
       } catch (e) {
         lastError = e.message;
