@@ -18,12 +18,14 @@ export const PROVIDERS = [
     apiKeyHint: 'Google AI Studio\'dan ücretsiz anahtar alın (AIzaSy... ile başlar)',
     apiKeyPlaceholder: 'AIzaSy...',
     models: [
-      { id: 'gemini-1.5-flash',      name: 'Gemini 1.5 Flash',      description: 'Hızlı ve dengeli (Önerilen)',  free: true  },
-      { id: 'gemini-1.5-pro',        name: 'Gemini 1.5 Pro',        description: 'Karmaşık analizler için',       free: true  },
+      { id: 'gemini-3.6-flash',      name: 'Gemini 3.6 Flash',      description: 'En son güncel (Önerilen)',     free: true  },
+      { id: 'gemini-3.8-flash',      name: 'Gemini 3.8 Flash',      description: 'Yüksek hızlı yeni nesil',      free: true  },
+      { id: 'gemini-3.1-pro',        name: 'Gemini 3.1 Pro',        description: 'Gelişmiş derin analiz',         free: false },
+      { id: 'gemini-3.0-flash',      name: 'Gemini 3.0 Flash',      description: '3.0 serisi hızlı',             free: true  },
+      { id: 'gemini-3.0-pro',        name: 'Gemini 3.0 Pro',        description: '3.0 serisi gelişmiş',          free: false },
       { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',      description: 'Yeni nesil hızlı',             free: true  },
-      { id: 'gemini-2.5-flash',      name: 'Gemini 2.5 Flash',      description: 'En son nesil (Yüksek talep)',   free: true  },
-      { id: 'gemini-3.0-flash',      name: 'Gemini 3.0 Flash',      description: 'En güncel 3.0 serisi',          free: true  },
-      { id: 'gemini-3.0-pro',        name: 'Gemini 3.0 Pro',        description: 'En güncel gelişmiş sürüm',      free: false }
+      { id: 'gemini-1.5-flash',      name: 'Gemini 1.5 Flash',      description: 'Kararlı klasik',               free: true  },
+      { id: 'gemini-1.5-pro',        name: 'Gemini 1.5 Pro',        description: 'Kararlı gelişmiş',             free: false }
     ]
   },
   {
@@ -49,7 +51,7 @@ export const PROVIDERS = [
     models: [
       { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Llama 3.3 70B',    description: 'Ücretsiz - Güçlü',     free: true  },
       { id: 'mistralai/mistral-7b-instruct:free',      name: 'Mistral 7B',      description: 'Ücretsiz - Hızlı',     free: true  },
-      { id: 'google/gemini-2.5-flash',                 name: 'Gemini 2.5 Flash', description: 'OpenRouter üzeri', free: false }
+      { id: 'google/gemini-3.6-flash',                 name: 'Gemini 3.6 Flash', description: 'OpenRouter üzeri', free: false }
     ]
   },
   {
@@ -233,7 +235,20 @@ export function setApiKey(key) {
 }
 
 export function getSelectedModel() {
-  return localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
+  const providerId = getSelectedProvider();
+  const provider = PROVIDERS.find(p => p.id === providerId);
+  const saved = localStorage.getItem('gemini_model');
+
+  if (provider && provider.models.length > 0) {
+    if (saved && provider.models.some(m => m.id === saved)) {
+      return saved;
+    }
+    // Deprecated veya listede olmayan bir model varsa (örn: gemini-2.5-flash) ilk modele geçir
+    const fallback = provider.models[0].id;
+    localStorage.setItem('gemini_model', fallback);
+    return fallback;
+  }
+  return 'gemini-3.6-flash';
 }
 
 export function setSelectedModel(modelId) {
