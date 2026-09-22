@@ -19,10 +19,9 @@ export const PROVIDERS = [
     apiKeyPlaceholder: 'AIzaSy...',
     models: [
       { id: 'gemini-3.6-flash',      name: 'Gemini 3.6 Flash',      description: 'Google Tarafından Önerilen En Güncel Model', free: true  },
-      { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',      description: 'Yeni nesil hızlı ve kararlı',             free: true  },
       { id: 'gemini-3.8-flash',      name: 'Gemini 3.8 Flash',      description: 'Yüksek hızlı yeni nesil',                 free: true  },
-      { id: 'gemini-3.1-pro',        name: 'Gemini 3.1 Pro',        description: 'Gelişmiş derin analiz',                    free: false },
       { id: 'gemini-3.0-flash',      name: 'Gemini 3.0 Flash',      description: '3.0 serisi hızlı',                        free: true  },
+      { id: 'gemini-3.1-pro',        name: 'Gemini 3.1 Pro',        description: 'Gelişmiş derin analiz',                    free: false },
       { id: 'gemini-3.0-pro',        name: 'Gemini 3.0 Pro',        description: '3.0 serisi gelişmiş',                     free: false }
     ]
   },
@@ -248,11 +247,19 @@ export function getSelectedModel() {
   const provider = PROVIDERS.find(p => p.id === providerId);
   const saved = localStorage.getItem('gemini_model');
 
+  // Gemini için eski/kullanımdan kalkan modelleri (1.x veya 2.x) kesinlikle temizle ve 3.6-flash yap
+  if (providerId === 'gemini') {
+    if (!saved || saved.startsWith('gemini-1.') || saved.startsWith('gemini-2.')) {
+      localStorage.setItem('gemini_model', 'gemini-3.6-flash');
+      return 'gemini-3.6-flash';
+    }
+  }
+
   if (provider && provider.models.length > 0) {
     if (saved && provider.models.some(m => m.id === saved)) {
       return saved;
     }
-    // Deprecated veya listede olmayan bir model varsa (örn: gemini-2.5-flash) ilk modele geçir
+    // Deprecated veya listede olmayan bir model varsa ilk modele geçir
     const fallback = provider.models[0].id;
     localStorage.setItem('gemini_model', fallback);
     return fallback;
@@ -392,21 +399,27 @@ async function callGemini(parts) {
             const errMsg = err?.error?.message || `HTTP ${res.status}`;
             lastError = `Gemini hatası (${currentModel}): ${errMsg}`;
 
-            const isHighDemand = res.status === 503 ||
+            const isModelProblem = res.status === 404 ||
+              res.status === 503 ||
               res.status === 429 ||
+              errMsg.toLowerCase().includes('no longer available') ||
+              errMsg.toLowerCase().includes('not found') ||
+              errMsg.toLowerCase().includes('not supported') ||
               errMsg.toLowerCase().includes('high demand') ||
               errMsg.toLowerCase().includes('resource_exhausted') ||
               errMsg.toLowerCase().includes('overloaded') ||
               errMsg.toLowerCase().includes('temporarily') ||
               errMsg.toLowerCase().includes('quota');
 
-            if (isHighDemand) {
-              // Yoğunluk varsa kısa bekle ve bir sonraki modele geç
-              await new Promise(r => setTimeout(r, 800));
-              if (attempt === 1) break;
+            if (isModelProblem) {
+              // Yoğunluk veya model kullanımdan kalkmışsa sıradaki modele geç
+              await new Promise(r => setTimeout(r, 600));
+              if (attempt === 1 || errMsg.toLowerCase().includes('no longer available') || errMsg.toLowerCase().includes('not found')) {
+                break; // Bu model kullanılamaz, hemen bir sonraki modele geç
+              }
               continue;
             } else {
-              // API key hatası veya istek formatı hatası gibi kalıcı bir hataysa durdur
+              // API key hatası gibi bir hataysa durdur
               return { error: lastError };
             }
           }
@@ -418,10 +431,30 @@ async function callGemini(parts) {
             break;
           }
 
-          return JSON.parse(text);
+          // JSON temizleme (model yanıtı markdown kod bloğu içine almışsa)
+          let clean = text.trim();
+          if (clean.startsWith('```json')) {
+            clean = clean.slice(7);
+          } else if (clean.startsWith('```')) {
+            clean = clean.slice(3);
+          }
+          if (clean.endsWith('```')) {
+            clean = clean.slice(0, -3);
+          }
+          clean = clean.trim();
+
+          try {
+            return JSON.parse(clean);
+          } catch (jsonErr) {
+            const match = clean.match(/\{[\s\S]*\}/);
+            if (match) {
+              return JSON.parse(match[0]);
+            }
+            throw new Error(`JSON ayrıştırma hatası: ${jsonErr.message}`);
+          }
         } catch (e) {
           lastError = `İstek başarısız (${currentModel}): ${e.message}`;
-          await new Promise(r => setTimeout(r, 800));
+          await new Promise(r => setTimeout(r, 600));
         }
       }
     }

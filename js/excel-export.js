@@ -191,11 +191,11 @@ export async function exportToExcel(assessmentData) {
     // ── Bakım Çalışmaları İstatistiği ──
     const bakimHeaderRow = rows.length;
     rows.push(['BAKIM ÇALIŞMALARI İSTATİSTİĞİ', ...new Array(20).fill('')]);
-    addMerge(merges, bakimHeaderRow, 0, bakimHeaderRow, 19);
+    addMerge(merges, bakimHeaderRow, 0, bakimHeaderRow, 20);
 
     const kaynaklarRow = rows.length;
     rows.push(['KAYNAKLARIN TEHLİKE LİSTESİ', ...new Array(20).fill('')]);
-    addMerge(merges, kaynaklarRow, 0, kaynaklarRow, 19);
+    addMerge(merges, kaynaklarRow, 0, kaynaklarRow, 20);
 
     // ── Boş satır ──
     rows.push(new Array(21).fill(''));
@@ -203,7 +203,7 @@ export async function exportToExcel(assessmentData) {
     // ── İSG & MSDS Bölümü ──
     const isgHeaderRow = rows.length;
     rows.push(['İSG & MSDS Eğitimleri verilmelidir', ...new Array(20).fill('')]);
-    addMerge(merges, isgHeaderRow, 0, isgHeaderRow, 19);
+    addMerge(merges, isgHeaderRow, 0, isgHeaderRow, 20);
 
     // Uyum kalemleri
     for (const item of compliance) {
